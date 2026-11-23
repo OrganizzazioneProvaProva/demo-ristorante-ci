@@ -1,4 +1,4 @@
-import type { Browser, Page } from "playwright-core";
+import { type Browser, errors, type Page } from "playwright-core";
 import { DESKTOP_MIN_WIDTH } from "./navigation.ts";
 
 /** Pulsanti pieni davvero visibili nella finestra ora (non nascosti, non fuori schermo). */
@@ -264,16 +264,39 @@ export async function checkScroll(
 					`${label}: pagina troppo corta (${range}px di scroll) per provare l'intestazione che si nasconde`,
 				);
 			} else if (phone) {
-				await scrollTo(page, 600);
-				if ((await headerTop()) > 1)
-					failures.push(
-						`${label}: scorrendo in basso l'intestazione del telefono non si nasconde`,
+				for (const { top, hidden, error } of [
+					{
+						top: 600,
+						hidden: true,
+						error:
+							"scorrendo in basso l'intestazione del telefono non si nasconde",
+					},
+					{
+						top: 500,
+						hidden: false,
+						error: "risalendo l'intestazione del telefono non ricompare",
+					},
+				]) {
+					await page.evaluate(
+						(y) => window.scrollTo({ top: y, behavior: "instant" }),
+						top,
 					);
-				await scrollTo(page, 500);
-				if ((await headerTop()) < 1)
-					failures.push(
-						`${label}: risalendo l'intestazione del telefono non ricompare`,
-					);
+					await page
+						.waitForFunction(
+							({ top, hidden }) => {
+								const header = document.querySelector("[data-site-header]");
+								if (!header || Math.abs(window.scrollY - top) > 1) return false;
+								const bottom = header.getBoundingClientRect().bottom;
+								return hidden ? bottom <= 1 : bottom > 1;
+							},
+							{ top, hidden },
+							{ timeout: 4000 },
+						)
+						.catch((cause: unknown) => {
+							if (!(cause instanceof errors.TimeoutError)) throw cause;
+							failures.push(`${label}: ${error}`);
+						});
+				}
 			} else {
 				await scrollTo(page, 600);
 				if ((await headerTop()) < 1)
