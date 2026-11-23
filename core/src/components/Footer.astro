@@ -1,0 +1,174 @@
+---
+/**
+ * Piè di pagina. Sul computer: il nome (o il logo) grande a sinistra e colonne ordinate (Pagine,
+ * Contatti, Seguici), poi una barra con i dati obbligatori (02: partita IVA e sede; REA e capitale
+ * sociale per le società di capitali) e i link alle pagine legali. Sul telefono gli stessi elementi
+ * in una pila: nome, pagine su due colonne, contatti, social, barra. Stile sobrio: solo i ruoli
+ * del design system.
+ */
+import { companyEmailContact } from "@siti/config";
+import type { CompanyInfo } from "../content/company.ts";
+import type { ContactLink } from "../content/contact-links.ts";
+import type { ResolvedImage } from "../content/images.ts";
+import type { LegalLink } from "../content/legal.ts";
+import { type NavItem, type ShellLabels, telHref } from "../content/shell.ts";
+import ContactIcon from "./ContactIcon.astro";
+import SiteImage from "./SiteImage.astro";
+
+interface Props {
+	company: CompanyInfo;
+	labels: ShellLabels["footer"];
+	/** Pagine legali obbligatorie (privacy, cookie, note legali, accessibilità). */
+	legalLinks: LegalLink[];
+	legalLabel: string;
+	/** Le pagine del sito (la stessa navigazione dell'intestazione). */
+	nav?: NavItem[];
+	/** WhatsApp e profili social presenti (`contactLinks`): chi non ne ha, non ne mostra. */
+	contactLinks?: ContactLink[];
+	/** Logo dell'attività, grande in alto; senza, compare il nome in grande. */
+	logo?: ResolvedImage;
+}
+
+const {
+	company,
+	labels,
+	legalLinks,
+	legalLabel,
+	nav = [],
+	contactLinks = [],
+	logo,
+} = Astro.props;
+const { address } = company;
+const tel = company.phone ? telHref(company.phone) : undefined;
+const email = companyEmailContact(company.email);
+const cityLine = `${address.postalCode} ${address.city} (${address.province})`;
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-line bg-surface">
+	<div
+		class="mx-auto grid max-w-5xl gap-10 px-4 pt-10 pb-8 md:grid-cols-[1.3fr_0.9fr_1.3fr_auto] md:gap-8"
+	>
+		<div>
+			{logo ? (
+				<SiteImage image={logo} class="h-16 w-auto max-w-full md:h-24" />
+			) : (
+				<p class="font-display text-4xl font-bold text-ink">{company.name}</p>
+			)}
+		</div>
+
+		{nav.length > 0 && (
+			<nav aria-label={labels.pages}>
+				<p class="font-display text-lg font-bold text-ink">{labels.pages}</p>
+				<ul class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 md:grid-cols-1">
+					{nav.map((item) => (
+						<li>
+							<a
+								href={item.href}
+								class="inline-block py-1 text-ink underline-offset-4 hover:underline"
+								aria-current={item.current ? "page" : undefined}
+							>
+								{item.label}
+							</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+		)}
+
+		<div>
+			<p class="font-display text-lg font-bold text-ink">{labels.contact}</p>
+			<address class="mt-3 grid gap-1 not-italic text-muted">
+				<span>{address.street}<br>{cityLine}</span>
+				{company.phone && (
+					<span>
+						{labels.phone}
+						{tel ? (
+							<a
+								href={tel}
+								class="ml-1 inline-block py-1 text-ink underline underline-offset-4"
+							>
+								{company.phone}
+							</a>
+						) : (
+							<span class="ml-1">{company.phone}</span>
+						)}
+					</span>
+				)}
+				{email && (
+					<span>
+						{labels.email}
+						<a
+							href={email.href}
+							class="ml-1 inline-block py-1 text-ink underline underline-offset-4"
+						>
+							{email.label}
+						</a>
+					</span>
+				)}
+			</address>
+		</div>
+
+		{contactLinks.length > 0 && (
+			<div>
+				<p class="font-display text-lg font-bold text-ink">{labels.follow}</p>
+				<ul data-contact-links class="mt-3 flex flex-wrap gap-3">
+					{contactLinks.map((link) => (
+						<li>
+							<a
+								href={link.href}
+								rel="noopener noreferrer"
+								class="inline-flex size-11 items-center justify-center rounded-full border-2 border-ink text-ink hover:bg-bg"
+							>
+								<ContactIcon kind={link.kind} class="size-5" />
+								<span class="sr-only">{link.label}</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			</div>
+		)}
+	</div>
+
+	<div class="border-t border-line">
+		<div
+			class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 text-xs text-muted md:flex-row md:items-center md:justify-between"
+		>
+			<div class="grid gap-1">
+				<p>© {year} {company.name}</p>
+				<dl class="flex flex-wrap gap-x-4 gap-y-1">
+					<div class="flex gap-1">
+						<dt>{labels.vatNumber}</dt>
+						<dd>{company.vatNumber}</dd>
+					</div>
+					{company.reaNumber && (
+						<div class="flex gap-1">
+							<dt>{labels.reaNumber}</dt>
+							<dd>{company.reaNumber}</dd>
+						</div>
+					)}
+					{company.shareCapital && (
+						<div class="flex gap-1">
+							<dt>{labels.shareCapital}</dt>
+							<dd>{company.shareCapital}</dd>
+						</div>
+					)}
+				</dl>
+			</div>
+			<nav aria-label={legalLabel} data-legal-links>
+				<ul class="flex flex-wrap gap-x-4 gap-y-1 md:justify-end">
+					{legalLinks.map((link) => (
+						<li>
+							<a
+								href={link.href}
+								class="inline-block py-1 text-ink underline underline-offset-4"
+							>
+								{link.label}
+							</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+		</div>
+	</div>
+</footer>

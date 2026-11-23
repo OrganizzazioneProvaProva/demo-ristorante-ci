@@ -1,0 +1,140 @@
+---
+/**
+ * Sezione del menu: gruppi (se il locale ha più menu) e sezioni con i piatti. Tutto il
+ * contenuto è nell'HTML: senza JavaScript si vede ogni menu e si passa dall'uno all'altro con
+ * link nella pagina. Con JavaScript i menu sono viste (se ne vede uno alla volta; durante una
+ * ricerca si vedono tutti) e la casella di ricerca filtra i piatti già presenti. Gli allergeni si elencano solo se "verificati", altrimenti si invita
+ * a chiedere al personale (Reg. UE 1169/2011).
+ */
+import type { Language } from "@siti/config";
+import Button from "@siti/core/Button.astro";
+import CatalogSearch from "@siti/core/components/CatalogSearch.astro";
+import { ASK_STAFF_NOTICE } from "../allergens.ts";
+import { formatPrice, type ResolvedGroup, type ResolvedItem } from "../menu.ts";
+import { MENU_CLASSES } from "../menu-classes.ts";
+import { MENU_LABELS } from "../menu-labels.ts";
+import { itemSearchText } from "../menu-search.ts";
+
+interface Props {
+	groups: ResolvedGroup[];
+	language: Language;
+}
+
+const { groups, language } = Astro.props;
+const labels = MENU_LABELS[language];
+const hasGroups = groups.some((group) => group.title !== undefined);
+const multiple = hasGroups && groups.length > 1;
+const SectionHeading = hasGroups ? "h3" : "h2";
+
+function itemMeta(item: ResolvedItem): string[] {
+	const parts: string[] = [];
+	if (item.components.length > 0) {
+		parts.push(`${labels.components}: ${item.components.join(", ")}`);
+	}
+	if (item.diet === "vegetarian") parts.push(labels.vegetarian);
+	if (item.diet === "vegan") parts.push(labels.vegan);
+	if (item.allergens.status === "listed") {
+		parts.push(
+			`${labels.allergens}: ${item.allergens.allergens.map((a) => a.label).join(", ")}`,
+		);
+	} else if (item.allergens.status === "none") {
+		parts.push(`${labels.allergens}: ${labels.noAllergens}`);
+	} else {
+		parts.push(ASK_STAFF_NOTICE[language]);
+	}
+	return parts;
+}
+---
+
+<CatalogSearch
+	language={language}
+	target="menu-catalog"
+	label={labels.search}
+/>
+<div
+	id="menu-catalog"
+	class={MENU_CLASSES.root}
+	data-catalog-views={multiple ? "" : undefined}
+>
+	{hasGroups && groups.length > 1 && (
+		<nav aria-label={labels.groups}>
+			<ul class="flex flex-wrap gap-2">
+				{groups.map((group) => (
+					<li>
+						<Button
+							href={`#${group.id}`}
+							variant="secondary"
+							data-view-button
+							class={MENU_CLASSES.viewButton}
+						>
+							{group.title}
+						</Button>
+					</li>
+				))}
+			</ul>
+		</nav>
+	)}
+	{groups.map((group) => (
+		<section
+			id={group.id}
+			data-search-group
+			data-view-panel={multiple ? "" : undefined}
+			class="mt-10 first:mt-0"
+		>
+			{group.title && (
+				<h2 data-reveal class={MENU_CLASSES.groupTitle}>
+					{group.title}
+				</h2>
+			)}
+			{group.description && (
+				<p class="mt-2 text-lg text-muted">{group.description}</p>
+			)}
+			{group.sections.length > 1 && (
+				<nav aria-label={labels.sections} class="mt-4">
+					<ul class="flex flex-wrap gap-x-4 gap-y-2">
+						{group.sections.map((section) => (
+							<li>
+								<a href={`#${section.id}`} class={MENU_CLASSES.anchorLink}>
+									{section.title}
+								</a>
+							</li>
+						))}
+					</ul>
+				</nav>
+			)}
+			{group.sections.map((section) => (
+				<section id={section.id} data-search-group class="mt-8">
+					<SectionHeading data-reveal class={MENU_CLASSES.sectionTitle}>
+						{section.title}
+					</SectionHeading>
+					{section.description && (
+						<p class="mt-2 text-muted">{section.description}</p>
+					)}
+					<ul class={MENU_CLASSES.itemList}>
+						{section.items.map((item) => (
+							<li class="py-4" data-search={itemSearchText(item, language)}>
+								<div class="flex items-baseline justify-between gap-4">
+									<p class={MENU_CLASSES.itemName}>
+										{item.name}
+										{item.featured && (
+											<span class={MENU_CLASSES.featured}>
+												{labels.featured}
+											</span>
+										)}
+									</p>
+									<p class={MENU_CLASSES.price}>
+										{formatPrice(item.price, language)}
+									</p>
+								</div>
+								{item.description && (
+									<p class="mt-1 text-ink">{item.description}</p>
+								)}
+								<p class={MENU_CLASSES.meta}>{itemMeta(item).join(" · ")}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			))}
+		</section>
+	))}
+</div>

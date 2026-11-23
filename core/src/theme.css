@@ -1,0 +1,88 @@
+@import "./motion.css";
+@import "./gallery-fan.css";
+@import "./gallery-mosaic.css";
+@import "./menu.css";
+
+/*
+  Livello CORE del design system (02, "Design system"): i RUOLI. I componenti usano solo
+  questi nomi (bg-bg, text-ink, bg-accent, font-display, rounded-ui...), mai un colore o un
+  font scritto a mano. I VALORI stanno nel DESIGN.md di ogni sito e `siti-design build`
+  li scrive in `theme.generated.css` (variabili --t-*), da importare dopo questo file.
+
+  `@source` serve perché Tailwind v4 non scansiona node_modules: senza, le classi usate
+  solo dai componenti del core non finiscono nel CSS del sito. Test e controlli sono esclusi:
+  le loro stringhe (regole vietate, esempi) non devono generare CSS in nessun sito.
+*/
+@source "./";
+@source not "./**/*.test.*";
+@source not "./checks";
+
+/* Nessuna modalità scura automatica: il tema del sito sta nel DESIGN.md (un fondo scuro è una
+   palette, non una preferenza del sistema). `dark:` si attiva solo con una classe `.dark` che
+   i nostri componenti non usano, quindi non segue mai `prefers-color-scheme`. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Hover solo con un puntatore preciso (core/DESIGN.md, Motion): di base Tailwind v4 usa solo
+   `(hover: hover)`, che su alcuni touch lascia l'hover "attaccato" dopo un tocco. Override
+   documentato (Tailwind, "Adding custom styles": variante con @media e @slot). */
+@custom-variant hover {
+	@media (hover: hover) and (pointer: fine) {
+		&:hover {
+			@slot;
+		}
+	}
+}
+
+@theme inline {
+	--color-bg: var(--t-bg);
+	--color-surface: var(--t-surface);
+	--color-ink: var(--t-ink);
+	--color-muted: var(--t-muted);
+	--color-line: var(--t-line);
+	--color-accent: var(--t-accent);
+	--color-accent-ink: var(--t-accent-ink);
+	/* Stato derivato (hover del pulsante), calcolato da `siti-design` e controllato nei contrasti. */
+	--color-accent-hover: var(--t-accent-hover);
+	--color-pop: var(--t-pop);
+	--color-pop-ink: var(--t-pop-ink);
+	--font-display: var(--t-font-display);
+	--font-body: var(--t-font-body);
+	--radius-ui: var(--t-radius);
+}
+
+@layer base {
+	html {
+		background: var(--color-bg);
+		color: var(--color-ink);
+		font-family: var(--font-body);
+	}
+
+	/* Focus sempre visibile e non solo colorato (WCAG 2.2). */
+	:focus-visible {
+		outline: 3px solid var(--color-accent);
+		outline-offset: 3px;
+	}
+}
+
+/* Movimento ridotto (02, Animazioni; WCAG 2.3.3): con `prefers-reduced-motion: reduce` nessuna animazione
+   o transizione dura più di un istante, né scorrimento animato. Vale per ogni componente. */
+/* Vista di un catalogo non selezionata (`scripts/catalog-views.ts`): un attributo a parte, così
+   non si confonde con `hidden`, che usa la ricerca sugli stessi elementi. */
+[data-view-inactive] {
+	display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	::before,
+	::after {
+		/* biome-ignore lint/complexity/noImportantStyles: il movimento ridotto deve vincere su qualunque stile */
+		animation-duration: 0.01ms !important;
+		/* biome-ignore lint/complexity/noImportantStyles: il movimento ridotto deve vincere su qualunque stile */
+		animation-iteration-count: 1 !important;
+		/* biome-ignore lint/complexity/noImportantStyles: il movimento ridotto deve vincere su qualunque stile */
+		transition-duration: 0.01ms !important;
+		/* biome-ignore lint/complexity/noImportantStyles: il movimento ridotto deve vincere su qualunque stile */
+		scroll-behavior: auto !important;
+	}
+}

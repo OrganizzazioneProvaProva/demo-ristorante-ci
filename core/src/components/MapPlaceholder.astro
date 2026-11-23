@@ -1,0 +1,27 @@
+---
+/**
+ * Rettangolo segnaposto della mappa (02: "mappa come immagine con link"). Non incorpora nulla e
+ * non chiama terzi: è un blocco con il link a Google Maps. Quando ci sarà l'immagine vera della
+ * mappa, sostituisce il contenuto del blocco. Finché c'è `data-placeholder`, `check-site` ferma
+ * la build dei siti che non sono `prova` o `demo-*` (stessa regola delle foto segnaposto).
+ */
+import type { Language } from "@siti/config";
+import { SHELL_LABELS } from "../content/shell.ts";
+
+interface Props {
+	/** Link a Google Maps (`mapHref`). */
+	href: string;
+	language: Language;
+}
+
+const { href, language } = Astro.props;
+const labels = SHELL_LABELS[language];
+---
+
+<a
+	href={href}
+	data-placeholder
+	class="flex aspect-video w-full items-center justify-center rounded-ui border-2 border-ink bg-surface px-4 text-center font-semibold text-ink underline"
+>
+	{labels.openMap}
+</a>

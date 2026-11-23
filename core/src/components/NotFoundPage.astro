@@ -1,0 +1,33 @@
+---
+import type { ComponentProps } from "astro/types";
+import Button from "../Button.astro";
+import { NOT_FOUND_LABELS } from "../content/not-found.ts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+interface Props {
+	layout: Omit<
+		ComponentProps<typeof SiteLayout>,
+		"title" | "description" | "indexing"
+	>;
+	contactsHref: string;
+}
+
+const { layout, contactsHref } = Astro.props;
+const labels = NOT_FOUND_LABELS[layout.language];
+---
+
+<SiteLayout
+	{...layout}
+	title={labels.title}
+	description={labels.description}
+	indexing="block"
+>
+	<div class="mx-auto max-w-5xl px-4 py-10">
+		<h1 class="font-display text-4xl font-bold text-ink">{labels.title}</h1>
+		<p class="mt-3 text-ink">{labels.description}</p>
+		<div class="mt-8 flex flex-wrap gap-3">
+			<Button href={layout.homeHref}>{labels.home}</Button>
+			<Button href={contactsHref} variant="secondary">{labels.contacts}</Button>
+		</div>
+	</div>
+</SiteLayout>

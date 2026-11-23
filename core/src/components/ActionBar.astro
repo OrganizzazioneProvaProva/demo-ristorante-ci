@@ -1,0 +1,41 @@
+---
+/**
+ * Barra di azioni fissa in basso, solo sul telefono (sotto `md`). Un'azione è il pulsante pieno
+ * (l'unico della vista, `core/DESIGN.md`: la dichiarata `primary`, altrimenti la prima), le altre sono secondarie.
+ * Il layout riserva lo spazio in fondo alla pagina (`shell-classes.ts`).
+ */
+import Button from "../Button.astro";
+import type { ShellAction } from "../content/shell.ts";
+
+interface Props {
+	actions: ShellAction[];
+	label: string;
+}
+
+const { actions, label } = Astro.props;
+// Il pulsante pieno è quello dichiarato `primary`; se nessuno lo è, il primo.
+const primaryIndex = Math.max(
+	0,
+	actions.findIndex((action) => action.primary),
+);
+---
+
+<nav
+	aria-label={label}
+	data-action-bar
+	class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] [view-transition-name:site-action-bar] md:hidden"
+>
+	<ul class="flex gap-2 p-2">
+		{actions.map((action, index) => (
+			<li class="flex-1">
+				<Button
+					href={action.href}
+					variant={index === primaryIndex ? "primary" : "secondary"}
+					class="w-full"
+				>
+					{action.label}
+				</Button>
+			</li>
+		))}
+	</ul>
+</nav>

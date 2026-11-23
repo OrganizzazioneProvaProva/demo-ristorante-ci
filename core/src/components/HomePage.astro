@@ -1,0 +1,93 @@
+---
+import { companyEmailContact } from "@siti/config";
+import type { ComponentProps } from "astro/types";
+import type { ResolvedFaq } from "../content/faq.ts";
+import type { ResolvedHome } from "../content/home.ts";
+import type { ResolvedImage } from "../content/images.ts";
+import type { OpeningHours as Hours } from "../content/opening-hours.ts";
+import type { ResolvedPromotion } from "../content/promotions.ts";
+import type { ShellAction } from "../content/shell.ts";
+import type { ResolvedTestimonial } from "../content/testimonials.ts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Band from "./Band.astro";
+import Faq from "./Faq.astro";
+import Gallery from "./Gallery.astro";
+import Hero from "./Hero.astro";
+import OpeningHours from "./OpeningHours.astro";
+import Promotions from "./Promotions.astro";
+import SocialProof from "./SocialProof.astro";
+import Story from "./Story.astro";
+import Testimonials from "./Testimonials.astro";
+
+interface Props {
+	layout: ComponentProps<typeof SiteLayout>;
+	home: ResolvedHome;
+	heroActions: ShellAction[];
+	promotions?: ResolvedPromotion[];
+	images?: ResolvedImage[];
+	hours?: Hours;
+	testimonials?: ResolvedTestimonial[];
+	faq?: ResolvedFaq;
+}
+
+const {
+	layout,
+	home,
+	heroActions,
+	promotions,
+	images,
+	hours,
+	testimonials,
+	faq,
+} = Astro.props;
+const { company, language } = layout;
+const email = companyEmailContact(company.email);
+---
+
+<SiteLayout {...layout}>
+	<Hero
+		variant="cover"
+		title={home.hero.title}
+		subtitle={home.hero.subtitle}
+		image={home.hero.image}
+		actions={heroActions}
+	/>
+	{promotions && (
+		<Band tone="surface">
+			<Promotions promotions={promotions} language={language} />
+		</Band>
+	)}
+	{images && (
+		<Band tone="bg">
+			<Gallery images={images} language={language} variant="fan" />
+		</Band>
+	)}
+	{hours && (
+		<Band tone="surface" data-scroll-top-ramp>
+			<OpeningHours hours={hours} language={language} />
+		</Band>
+	)}
+	{home.story && (
+		<Band tone="bg">
+			<Story id="storia" title={home.story.title} text={home.story.text} />
+		</Band>
+	)}
+	{(testimonials || home.socialProof) && (
+		<Band tone="surface">
+			{testimonials && (
+				<Testimonials
+					testimonials={testimonials.slice(0, 6)}
+					language={language}
+				/>
+			)}
+			{home.socialProof && (
+				<SocialProof language={language} proof={home.socialProof} />
+			)}
+		</Band>
+	)}
+	{faq && (
+		<Band tone="bg">
+			<Faq faq={faq} language={language} contact={email} />
+		</Band>
+	)}
+</SiteLayout>

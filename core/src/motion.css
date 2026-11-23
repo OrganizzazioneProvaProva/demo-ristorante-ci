@@ -1,0 +1,311 @@
+/*
+  Movimento della Base. Regole: solo `transform`/`translate`/`scale`/`opacity` e token
+  `--motion-*`; ogni animazione, transizione di pagina e animazione legata allo scroll sta
+  dentro `prefers-reduced-motion: no-preference`; il contenuto resta visibile senza JavaScript
+  e senza supporto del browser (un effetto aggiunge, non nasconde in attesa); l'elemento LCP
+  dell'hero non parte mai trasparente e il titolo non si anima.
+  I componenti espongono solo gli agganci `data-*`. Il livello di movimento lo sceglie il
+  `DESIGN.md` del sito (`motion`) e arriva su `<html data-motion>`:
+  - `no-animation`: niente animazioni né transizioni; il cambio di pagina nativo non è nel CSS
+    generato; barra di azioni sempre visibile, intestazione sempre ferma.
+  - `light-animation` (predefinito): le regole sotto.
+  - `expressive-animation`: stessi effetti con token più ampi, più lo zoom delle immagini, la
+    sottolineatura della navigazione disegnata e il sollevamento dei pulsanti (solo con
+    puntatore preciso).
+  Il movimento ridotto del sistema vince su tutti i livelli. Il `@view-transition` non è qui:
+  lo scrive `siti-design` nel CSS generato, solo se il livello non è `no-animation`.
+*/
+:root {
+	--motion-fast: 120ms;
+	--motion-base: 200ms;
+	--motion-slow: 320ms;
+	--motion-page: 250ms;
+	--motion-hero: 900ms;
+	--ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--ease-in: cubic-bezier(0.4, 0, 1, 1);
+	--motion-distance: 1rem;
+	--motion-scale-from: 1.04;
+}
+
+/* Espressivo: durate più lunghe (circa ×1,3), spostamenti e assestamento più ampi. */
+html[data-motion="expressive-animation"] {
+	--motion-fast: 160ms;
+	--motion-base: 260ms;
+	--motion-slow: 420ms;
+	--motion-page: 320ms;
+	--motion-hero: 1200ms;
+	--motion-distance: 2rem;
+	--motion-scale-from: 1.08;
+}
+
+@keyframes reveal {
+	from {
+		opacity: 0;
+		translate: 0 var(--motion-distance);
+	}
+	to {
+		opacity: 1;
+		translate: 0 0;
+	}
+}
+
+@keyframes hero-settle {
+	from {
+		scale: var(--motion-scale-from);
+	}
+	to {
+		scale: 1;
+	}
+}
+
+/* Il tasto "torna all'inizio" compare con l'opacità, fino al 70%. */
+@keyframes scroll-top-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 0.7;
+	}
+}
+
+@keyframes bar-enter {
+	from {
+		translate: 0 100%;
+	}
+	to {
+		translate: 0 0;
+	}
+}
+
+/* Azioni dell'hero sul telefono: senza il movimento (o senza supporto) le azioni stanno solo
+   nella barra fissa, così si vede un solo pulsante pieno. Da `md` la barra non c'è. */
+@media (max-width: 47.999rem) {
+	[data-hero-actions] {
+		display: none;
+	}
+}
+
+/* In ogni regola qui sotto `html:not([data-motion="no-animation"])` esclude il livello senza
+   animazioni; senza l'attributo vale il livello leggero. */
+@media (prefers-reduced-motion: no-preference) {
+	/* L'hero: la foto si assesta (scala), dentro un contenitore che ritaglia. */
+	html:not([data-motion="no-animation"]) [data-hero-media] img {
+		animation: hero-settle var(--motion-hero) var(--ease-out) both;
+	}
+
+	/* Rivelazione di foto, card e titoli allo scroll, dove il browser sa legarla allo scroll. */
+	@supports (animation-timeline: view()) {
+		/* Proprietà singole, non la scorciatoia `animation`: il minificatore di CSS fonde
+		   `animation-timeline` nella scorciatoia e il browser la scarta (animazione "none"). */
+		html:not([data-motion="no-animation"]) [data-reveal] {
+			animation-name: reveal;
+			animation-timing-function: linear;
+			animation-fill-mode: both;
+			animation-timeline: view();
+			animation-range: entry 0% entry 100%;
+		}
+	}
+
+	/* Galleria a ventaglio: le foto scivolano alla nuova posizione (solo `transform` e `opacity`).
+	   Non mentre si trascina: allora seguono il dito. */
+	html:not([data-motion="no-animation"])
+		[data-fan-ready]
+		[data-fan-viewport]:not([data-dragging])
+		[data-fan-slide] {
+		transition:
+			transform var(--motion-slow) var(--ease-out),
+			opacity var(--motion-slow) var(--ease-out);
+	}
+
+	/* "Torna all'inizio": il salto verso l'ancora `#inizio` scorre in modo morbido. Solo per quel salto
+	   (la pagina è su `#inizio` mentre scorre), così non cambia ogni altro scorrimento. */
+	html:not([data-motion="no-animation"]):has(#inizio:target) {
+		scroll-behavior: smooth;
+	}
+
+	/* Il tasto compare scorrendo: di base tra il 20% e il 45% della lunghezza della pagina; nelle pagine con una fascia
+	   `data-scroll-top-ramp` (la home) segue quella fascia: invisibile fino alla fine della galleria, poi
+	   sempre meno trasparente fino al 70% all'inizio della sezione seguente. Solo `opacity`. */
+	@supports (animation-timeline: scroll()) {
+		html:not([data-motion="no-animation"]) [data-scroll-top] {
+			animation-name: scroll-top-fade;
+			animation-timing-function: linear;
+			animation-fill-mode: both;
+			animation-timeline: scroll(root);
+			animation-range: 20% 45%;
+		}
+	}
+
+	@supports (animation-timeline: view()) and
+		(timeline-scope: --scroll-top-ramp) {
+		/* `timeline-scope` non si somma: la regola dell'hero ne scrive un'altra sullo stesso elemento, quindi
+		   qui si dichiarano insieme tutti e due i nomi (più specifica, vince). Un nome senza elemento è innocuo. */
+		html:not([data-motion="no-animation"]):has([data-scroll-top-ramp]):has(
+			[data-scroll-top]
+		) {
+			timeline-scope: --scroll-top-ramp, --hero-actions;
+		}
+
+		html:not([data-motion="no-animation"]) [data-scroll-top-ramp] {
+			view-timeline: --scroll-top-ramp block;
+		}
+
+		html:not([data-motion="no-animation"]):has([data-scroll-top-ramp])
+			[data-scroll-top] {
+			animation-timeline: --scroll-top-ramp;
+			animation-range: exit 0% exit 100%;
+		}
+	}
+
+	/* Il menu a hamburger: le tre barre diventano una X (solo `transform` e `opacity`). */
+	html:not([data-motion="no-animation"]) [data-menu-toggle] span > span {
+		transition:
+			transform var(--motion-base) var(--ease-out),
+			opacity var(--motion-base) var(--ease-out);
+	}
+
+	/* Ingrandimento delle foto: l'espansione e il ritorno durano come gli altri movimenti lenti. */
+	html:not([data-motion="no-animation"])::view-transition-group(lightbox) {
+		animation-duration: var(--motion-slow);
+		animation-timing-function: var(--ease-out);
+	}
+
+	/* Una foto di scorta che passa dall'altro lato (ciclo infinito) salta senza animazione. */
+	html:not([data-motion="no-animation"])
+		[data-fan-ready]
+		[data-fan-viewport]:not([data-dragging])
+		[data-fan-slide][data-jump] {
+		transition: none;
+	}
+
+	/* La barra entra quando il gruppo di azioni dell'hero esce dall'alto (solo CSS). */
+	@supports (animation-timeline: view()) and (timeline-scope: --hero-actions) {
+		@media (max-width: 47.999rem) {
+			html:not([data-motion="no-animation"]) [data-hero-actions] {
+				display: flex;
+				view-timeline: --hero-actions block;
+			}
+
+			html:not([data-motion="no-animation"]):has([data-hero-actions]) {
+				timeline-scope: --hero-actions;
+			}
+
+			html:not([data-motion="no-animation"]):has([data-hero-actions])
+				[data-action-bar] {
+				animation-name: bar-enter;
+				animation-timing-function: linear;
+				animation-fill-mode: both;
+				animation-timeline: --hero-actions;
+				animation-range: exit 0% exit 100%;
+			}
+
+			/* Se il focus entra nella barra (per esempio con Maiusc+Tab da cima pagina) la barra
+			   torna al suo posto: il focus non finisce mai su un elemento fuori schermo. */
+			html:not([data-motion="no-animation"]):has([data-hero-actions])
+				[data-action-bar]:focus-within {
+				animation-name: none;
+			}
+		}
+	}
+
+	/* Menu del telefono: entra con una breve dissolvenza e un piccolo spostamento. */
+	@media (max-width: 47.999rem) {
+		html:not([data-motion="no-animation"]) nav[popover] {
+			opacity: 0;
+			translate: 0 -0.5rem;
+			transition:
+				opacity var(--motion-base) var(--ease-out),
+				translate var(--motion-base) var(--ease-out),
+				overlay var(--motion-fast) allow-discrete,
+				display var(--motion-fast) allow-discrete;
+		}
+
+		html:not([data-motion="no-animation"]) nav[popover]:popover-open {
+			opacity: 1;
+			translate: 0 0;
+		}
+
+		@starting-style {
+			html:not([data-motion="no-animation"]) nav[popover]:popover-open {
+				opacity: 0;
+				translate: 0 -0.5rem;
+			}
+		}
+
+		/* Intestazione del telefono: sparisce scorrendo in basso, ricompare risalendo (il
+		   modulo `header-scroll` scrive `data-scroll`, e non lo fa con `no-animation`). Con il
+		   focus dentro resta visibile. */
+		html:not([data-motion="no-animation"]) [data-site-header] {
+			transition: translate var(--motion-slow) var(--ease-out);
+		}
+
+		html:not([data-motion="no-animation"])
+			[data-site-header][data-scroll="hidden"]:not(:focus-within) {
+			translate: 0 -100%;
+		}
+	}
+
+	/* Cambio di pagina: dissolvenza del contenuto; intestazione e barra restano ferme.
+	   Il `@view-transition` che lo attiva sta nel CSS generato (non con `no-animation`). */
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation-duration: var(--motion-page);
+		animation-timing-function: var(--ease-out);
+	}
+
+	/* Espressivo, solo con puntatore preciso: le immagini con `data-zoom` si ingrandiscono
+	   dentro la cornice e i pulsanti si sollevano di poco. */
+	@media (hover: hover) and (pointer: fine) {
+		html[data-motion="expressive-animation"] [data-zoom] {
+			overflow: clip;
+		}
+
+		html[data-motion="expressive-animation"] [data-zoom] img {
+			transition: scale var(--motion-slow) var(--ease-out);
+		}
+
+		html[data-motion="expressive-animation"] [data-zoom]:hover img {
+			scale: 1.06;
+		}
+
+		/* Navigazione da `md`: la sottolineatura si disegna da sinistra al passaggio del mouse; la
+		   pagina corrente (`aria-current`) resta sottolineata, senza dipendere dall'hover. */
+		@media (min-width: 48rem) {
+			html[data-motion="expressive-animation"] [data-nav-link] {
+				position: relative;
+			}
+
+			html[data-motion="expressive-animation"]
+				[data-nav-link]:not([aria-current="page"]) {
+				text-decoration-line: none;
+			}
+
+			html[data-motion="expressive-animation"]
+				[data-nav-link]:not([aria-current="page"])::after {
+				content: "";
+				position: absolute;
+				inset: auto 0 0;
+				height: 2px;
+				background: currentColor;
+				transform-origin: left;
+				scale: 0 1;
+				transition: scale var(--motion-base) var(--ease-out);
+			}
+
+			html[data-motion="expressive-animation"]
+				[data-nav-link]:not([aria-current="page"]):hover::after {
+				scale: 1 1;
+			}
+		}
+
+		html[data-motion="expressive-animation"] [data-button] {
+			transition:
+				background-color var(--motion-base) var(--ease-out),
+				translate var(--motion-base) var(--ease-out);
+		}
+
+		html[data-motion="expressive-animation"] [data-button]:hover {
+			translate: 0 -2px;
+		}
+	}
+}

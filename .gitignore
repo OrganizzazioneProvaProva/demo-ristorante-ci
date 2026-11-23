@@ -1,0 +1,26 @@
+# Prove usa e getta: non entrano nel repository
+/scratch/
+
+# Dipendenze e output di build
+node_modules/
+dist/
+.astro/
+.wrangler/
+
+# Generati dal DESIGN.md (valori del design di ogni sito)
+*.generated.css
+
+# Generati da Sanity (cache e schema estratto)
+.sanity/
+clienti/*/studio/schema.json
+
+# Segreti: mai nel monorepo
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+
+# Impostazioni personali di Claude Code
+.claude/settings.local.json
+
+*.log

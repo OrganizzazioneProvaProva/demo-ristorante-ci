@@ -1,0 +1,38 @@
+---
+/**
+ * Avvisi del giorno ("chiuso oggi", "domani chiusi per una festa"): una fascia in cima alla
+ * pagina. Scritti alla build per ciò che è valido quel giorno; il browser nasconde quelli
+ * scaduti nel frattempo (`scripts/valid-dates.ts`).
+ */
+import type { Language } from "@siti/config";
+import type { ResolvedNotice } from "../content/promotions.ts";
+import { SECTION_LABELS } from "../content/section-labels.ts";
+
+interface Props {
+	notices: ResolvedNotice[];
+	language: Language;
+}
+
+const { notices, language } = Astro.props;
+const labels = SECTION_LABELS[language];
+---
+
+{notices.length > 0 && (
+	<section
+		aria-label={labels.notices}
+		data-valid-group
+		class="bg-pop text-pop-ink"
+	>
+		<ul class="mx-auto max-w-5xl px-4 py-2 text-center font-semibold">
+			{notices.map((notice) => (
+				<li data-valid-from={notice.validFrom} data-valid-to={notice.validTo}>
+					{notice.message}
+				</li>
+			))}
+		</ul>
+	</section>
+)}
+
+<script>
+import "../scripts/valid-dates.ts";
+</script>

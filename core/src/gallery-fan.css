@@ -1,0 +1,98 @@
+/*
+  Galleria a ventaglio (`Gallery variant="fan"`): le foto in pila, quella attiva al centro e le
+  altre ruotate, rimpicciolite e sovrapposte, come un ventaglio di carte. Senza JavaScript la
+  regione resta una fila che scorre con aggancio (le classi del componente); con JavaScript
+  `scripts/gallery-fan.ts` scrive `data-fan-ready` e per ogni foto `--offset` (posizione rispetto
+  all'attiva, anche frazionaria mentre si trascina) e `--abs` (il suo valore assoluto).
+  Qui solo il layout; la transizione sta in `motion.css`, dentro `prefers-reduced-motion`.
+  Sul telefono se ne vedono 3, da `md` 5 (il raggio lo legge lo script da `--fan-radius`).
+*/
+[data-fan] {
+	/* Le foto hanno uno z-index alto: senza un contesto proprio finirebbero sopra la barra di azioni. */
+	isolation: isolate;
+	--fan-radius: 1;
+	--fan-w: 10rem;
+	--fan-h: 13.5rem;
+	--fan-step: 6rem;
+	--fan-rot: 9deg;
+	--fan-drop: 1.25rem;
+	--fan-shrink: 0.07;
+}
+
+@media (min-width: 48rem) {
+	[data-fan] {
+		--fan-radius: 2;
+		--fan-w: 16rem;
+		--fan-h: 21.5rem;
+		--fan-step: 10.5rem;
+		--fan-rot: 7deg;
+		--fan-drop: 1.75rem;
+	}
+}
+
+/* Movimento ridotto: nessuna rotazione né scala, solo la pila ordinata. */
+@media (prefers-reduced-motion: reduce) {
+	[data-fan] {
+		--fan-rot: 0deg;
+		--fan-drop: 0rem;
+		--fan-shrink: 0;
+	}
+}
+
+/* Le schede laterali e le rotazioni non devono creare scorrimento orizzontale della pagina. */
+[data-fan-ready] {
+	/* Le schede laterali possono arrivare fino ai bordi dello schermo, non solo fino al margine. */
+	margin-inline: -1rem;
+	overflow-x: clip;
+}
+
+[data-fan-ready] [data-fan-viewport] {
+	position: relative;
+	height: calc(var(--fan-h) + var(--fan-drop) * 3 + 2rem);
+	overflow: visible;
+	scroll-snap-type: none;
+	touch-action: pan-y;
+	cursor: grab;
+	user-select: none;
+}
+
+[data-fan-ready] [data-fan-viewport][data-dragging] {
+	cursor: grabbing;
+}
+
+[data-fan-ready] [data-fan-track] {
+	display: block;
+	height: 100%;
+}
+
+[data-fan-ready] [data-fan-slide] {
+	position: absolute;
+	top: 1rem;
+	left: 50%;
+	width: var(--fan-w);
+	height: var(--fan-h);
+	transform-origin: 50% 100%;
+	transform: translateX(-50%)
+		translateX(calc(var(--offset, 0) * var(--fan-step)))
+		translateY(calc(var(--abs, 0) * var(--fan-drop)))
+		rotate(calc(var(--offset, 0) * var(--fan-rot)))
+		scale(calc(1 - var(--abs, 0) * var(--fan-shrink)));
+	/* `--vis`: 1 dentro il ventaglio, sfuma a 0 nella foto di scorta appena fuori (ciclo a buffer). */
+	opacity: calc(var(--vis, 1) * (1 - var(--abs, 0) * 0.12));
+	z-index: calc(20 - var(--abs, 0) * 4);
+}
+
+[data-fan-ready] [data-fan-slide][data-hidden] {
+	visibility: hidden;
+	opacity: 0;
+	pointer-events: none;
+}
+
+[data-fan-ready] [data-fan-slide] img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: var(--t-radius);
+	pointer-events: none;
+	-webkit-user-drag: none;
+}

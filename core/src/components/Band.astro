@@ -1,0 +1,27 @@
+---
+/**
+ * Fascia di una sezione della pagina: sfondo a righe alternate (`bg` e `surface`) con una linea
+ * sottile sopra, così le sezioni si staccano una dall'altra. Le schede (`data-card`) dentro la fascia
+ * prendono lo sfondo opposto, per restare visibili; fuori da una fascia hanno il loro `bg-surface`.
+ * L'hero non sta in una fascia: ha la sua foto.
+ */
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"div"> {
+	tone?: "bg" | "surface";
+}
+
+const { tone = "bg", ...rest } = Astro.props;
+---
+
+<div
+	class:list={[
+		"border-t border-line",
+		tone === "surface"
+			? "bg-surface [&_[data-card]]:bg-bg"
+			: "bg-bg [&_[data-card]]:bg-surface",
+	]}
+	{...rest}
+>
+	<slot />
+</div>

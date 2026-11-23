@@ -1,0 +1,20 @@
+---
+import type { Alternate } from "../content/pages.ts";
+
+interface Props {
+	alternates: Alternate[];
+}
+
+const { alternates } = Astro.props;
+const site = Astro.site;
+
+if (alternates.length > 0 && !site) {
+	throw new Error(
+		"HreflangLinks: serve `site` in astro.config (Google vuole URL assoluti)",
+	);
+}
+---
+
+{alternates.map(({ hreflang, path }) => (
+	<link rel="alternate" hreflang={hreflang} href={new URL(path, site).href} />
+))}

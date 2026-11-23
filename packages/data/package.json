@@ -1,0 +1,28 @@
+{
+	"name": "@siti/data",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"description": "Lettura dei contenuti dal CMS alla build: client Sanity, query GROQ e caricatore con due sorgenti (dati finti per prova e demo, Sanity per i siti veri). Mai nel browser.",
+	"exports": {
+		".": "./src/index.ts",
+		"./queries": "./src/queries.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "node --test"
+	},
+	"dependencies": {
+		"@sanity/client": "^8.16.0",
+		"@siti/config": "workspace:*",
+		"@siti/core": "workspace:*",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@siti/preset-ristorante": "workspace:*",
+		"@siti/preset-ristorante-studio": "workspace:*",
+		"@siti/studio-core": "workspace:*",
+		"@types/node": "^26.6.6",
+		"sanity": "catalog:"
+	}
+}

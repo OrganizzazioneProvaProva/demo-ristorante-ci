@@ -1,0 +1,50 @@
+---
+import type { ComponentProps } from "astro/types";
+import type { ResolvedHome } from "../content/home.ts";
+import type { OpeningHours as Hours } from "../content/opening-hours.ts";
+import { mapHref } from "../content/shell.ts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import MapPlaceholder from "./MapPlaceholder.astro";
+import OpeningHours from "./OpeningHours.astro";
+import Story from "./Story.astro";
+
+interface Props {
+	layout: ComponentProps<typeof SiteLayout>;
+	story?: ResolvedHome["story"];
+	hours?: Hours;
+	mapQuery?: string;
+}
+
+const { layout, story, hours, mapQuery } = Astro.props;
+const { language, title, company } = layout;
+const where = language === "it" ? "Dove siamo" : "Where to find us";
+---
+
+<SiteLayout {...layout}>
+	<div class="mx-auto max-w-5xl px-4 pt-8">
+		<h1 class="font-display text-4xl font-bold text-ink">{title}</h1>
+	</div>
+	{story && <Story id="storia" title={story.title} text={story.text} />}
+	<section
+		id="dove"
+		aria-labelledby="dove-title"
+		class="mx-auto max-w-5xl px-4 py-10"
+	>
+		<h2
+			id="dove-title"
+			data-reveal
+			class="font-display text-2xl font-bold text-ink"
+		>
+			{where}
+		</h2>
+		<address class="mt-3 not-italic text-ink">
+			{company.address.street}, {company.address.postalCode}
+			{company.address.city}
+			({company.address.province})
+		</address>
+		<div class="mt-6">
+			<MapPlaceholder href={mapHref(company, mapQuery)} language={language} />
+		</div>
+	</section>
+	{hours && <OpeningHours hours={hours} language={language} />}
+</SiteLayout>

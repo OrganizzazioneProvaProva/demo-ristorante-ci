@@ -1,0 +1,32 @@
+---
+import type { ComponentProps } from "astro/types";
+import type { ContactFormModel } from "../content/contact-form.ts";
+import { mapHref } from "../content/shell.ts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import ContactForm from "./ContactForm.astro";
+import MapPlaceholder from "./MapPlaceholder.astro";
+
+interface Props {
+	layout: ComponentProps<typeof SiteLayout>;
+	intro: string;
+	formId: string;
+	form: ContactFormModel;
+	mapQuery?: string;
+}
+
+const { layout, intro, formId, form, mapQuery } = Astro.props;
+const { language, title, company } = layout;
+---
+
+<SiteLayout {...layout}>
+	<div class="mx-auto max-w-2xl px-4 py-8">
+		<h1 class="font-display text-4xl font-bold text-ink">{title}</h1>
+		<p class="mt-3 text-ink">{intro}</p>
+		<div class="mt-8">
+			<ContactForm id={formId} model={form} />
+		</div>
+		<div class="mt-10">
+			<MapPlaceholder href={mapHref(company, mapQuery)} language={language} />
+		</div>
+	</div>
+</SiteLayout>

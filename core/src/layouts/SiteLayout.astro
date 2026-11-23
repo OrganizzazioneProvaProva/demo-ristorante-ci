@@ -1,0 +1,131 @@
+---
+/**
+ * Layout di un sito con il guscio completo: link "Vai al contenuto", intestazione con
+ * navigazione, `<main>`, piè di pagina con i dati aziendali e, sul telefono, la barra di
+ * azioni fissa. Compone `BaseLayout` (head, SEO, hreflang, font).
+ */
+import type { IndexingMode, Language } from "@siti/config";
+import type { MotionLevel } from "@siti/design";
+import ActionBar from "../components/ActionBar.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import JsonLd from "../components/JsonLd.astro";
+import Notices from "../components/Notices.astro";
+import ScrollTop from "../components/ScrollTop.astro";
+import type { CompanyInfo } from "../content/company.ts";
+import type { ContactLink } from "../content/contact-links.ts";
+import type { ResolvedImage } from "../content/images.ts";
+import { LEGAL_LABELS, type LegalLink } from "../content/legal.ts";
+import type { Alternate } from "../content/pages.ts";
+import type { ResolvedNotice } from "../content/promotions.ts";
+import { documentTitle } from "../content/seo.ts";
+import {
+	type NavItem,
+	SHELL_LABELS,
+	type ShellAction,
+} from "../content/shell.ts";
+import {
+	BAR_CLEARANCE_PADDING,
+	BAR_CLEARANCE_SCROLL,
+	HEADER_SCROLL_PADDING,
+} from "../shell-classes.ts";
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+	language: Language;
+	indexing?: IndexingMode;
+	title: string;
+	description: string;
+	alternates?: Alternate[];
+	fontVariables?: string[];
+	/** Livello di movimento del DESIGN.md (`design.tokens.motion`). */
+	motion?: MotionLevel;
+	company: CompanyInfo;
+	homeHref: string;
+	nav: NavItem[];
+	/** Azioni della barra in basso (la prima è il pulsante pieno); vuoto = nessuna barra. */
+	actions: ShellAction[];
+	/** Pagine legali obbligatorie (`legalLinks` del core): il piè di pagina le mostra sempre. */
+	legalLinks: LegalLink[];
+	/** WhatsApp e profili social presenti: bottoni nel piè di pagina. */
+	contactLinks?: ContactLink[];
+	/** Logo dell'attività per il piè di pagina (`resolveImage` di `company.logo`). */
+	logo?: ResolvedImage;
+	/** Avvisi del giorno, in una fascia in cima alla pagina (sopra l'intestazione). */
+	notices?: ResolvedNotice[];
+	/** Dati strutturati (schema.org) della pagina: un blocco JSON-LD per ogni oggetto. */
+	jsonLd?: unknown[];
+}
+
+const {
+	language,
+	indexing,
+	title,
+	description,
+	alternates,
+	fontVariables,
+	motion,
+	company,
+	homeHref,
+	nav,
+	actions,
+	legalLinks,
+	contactLinks = [],
+	logo,
+	notices = [],
+	jsonLd = [],
+} = Astro.props;
+const labels = SHELL_LABELS[language];
+const hasBar = actions.length > 0;
+---
+
+<BaseLayout
+	language={language}
+	indexing={indexing}
+	title={documentTitle(title, company)}
+	socialTitle={title}
+	siteName={company.name}
+	description={description}
+	alternates={alternates}
+	fontVariables={fontVariables}
+	motion={motion}
+	htmlClass={hasBar
+		? `${HEADER_SCROLL_PADDING} ${BAR_CLEARANCE_SCROLL}`
+		: HEADER_SCROLL_PADDING}
+>
+	<div
+		id="inizio"
+		class:list={[
+			"flex min-h-dvh flex-col",
+			hasBar ? BAR_CLEARANCE_PADDING : undefined,
+		]}
+	>
+		<a
+			href="#contenuto"
+			class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-30 focus:bg-surface focus:p-3 focus:text-ink"
+			>{labels.skipToContent}</a
+		>
+		<Notices notices={notices} language={language} />
+		<Header
+			brand={company.name}
+			homeHref={homeHref}
+			items={nav}
+			labels={labels}
+		/>
+		<main id="contenuto" class="flex-1">
+			<slot />
+		</main>
+		<Footer
+			company={company}
+			labels={labels.footer}
+			legalLinks={legalLinks}
+			nav={nav}
+			legalLabel={LEGAL_LABELS[language].nav}
+			contactLinks={contactLinks}
+			logo={logo}
+		/>
+	</div>
+	{jsonLd.map((data) => <JsonLd data={data} />)}
+	{hasBar && <ActionBar actions={actions} label={labels.quickActions} />}
+	<ScrollTop label={labels.toTop} />
+</BaseLayout>

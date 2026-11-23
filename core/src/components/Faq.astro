@@ -1,0 +1,82 @@
+---
+/**
+ * Domande frequenti: righe numerate che si aprono una alla volta (`<details name>`: nativo,
+ * accessibile e senza JavaScript), con in fondo un invito a scrivere. Colori e bordi dai ruoli del
+ * design system: la riga aperta ha il bordo dell'accento.
+ */
+import type { Language } from "@siti/config";
+import Button from "../Button.astro";
+import type { ResolvedFaq } from "../content/faq.ts";
+import { SECTION_LABELS } from "../content/section-labels.ts";
+
+interface Props {
+	faq: ResolvedFaq;
+	language: Language;
+	/** Pulsante dell'invito in fondo (per esempio l'email dell'attività); senza, l'invito non compare. */
+	contact?: { label: string; href: string };
+}
+
+const { faq, language, contact } = Astro.props;
+const labels = SECTION_LABELS[language];
+---
+
+<section
+	id="faq"
+	aria-labelledby="faq-title"
+	class="mx-auto max-w-3xl px-4 py-12"
+>
+	<div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
+		<h2
+			id="faq-title"
+			data-reveal
+			class="font-display text-4xl font-bold text-ink"
+		>
+			{faq.title ?? labels.faq}
+		</h2>
+		{faq.subtitle && <p class="text-muted">{faq.subtitle}</p>}
+	</div>
+	<ul class="mt-8 grid gap-3 [counter-reset:faq]">
+		{faq.items.map((item, index) => (
+			<li class="[counter-increment:faq]">
+				<details
+					name="faq"
+					data-card
+					open={index === 0}
+					class="group rounded-ui border-2 border-line bg-surface open:border-accent"
+				>
+					<summary class="flex min-h-14 cursor-pointer list-none items-center gap-4 px-4 py-3 text-lg font-semibold text-ink [&::-webkit-details-marker]:hidden">
+						<span
+							aria-hidden="true"
+							class="w-6 shrink-0 text-sm font-normal tabular-nums text-muted before:content-[counter(faq,decimal-leading-zero)]"
+						></span>
+						<span class="flex-1">{item.question}</span>
+						<svg
+							aria-hidden="true"
+							viewBox="0 0 24 24"
+							class="size-8 shrink-0 rounded-full border border-line p-2 text-ink"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						>
+							<path d="M5 12h14" />
+							<path d="M12 5v14" class="group-open:hidden" />
+						</svg>
+					</summary>
+					<p class="px-4 pb-4 pl-[3.5rem] text-ink">{item.answer}</p>
+				</details>
+			</li>
+		))}
+	</ul>
+	{contact && (
+		<div class="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-8">
+			<div>
+				<p class="font-display text-xl font-bold text-ink">
+					{faq.contactTitle ?? labels.faqContactTitle}
+				</p>
+				<p class="text-muted">{faq.contactText ?? labels.faqContactText}</p>
+			</div>
+			<Button href={contact.href}>{contact.label}</Button>
+		</div>
+	)}
+</section>

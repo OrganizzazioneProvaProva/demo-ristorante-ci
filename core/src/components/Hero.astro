@@ -1,0 +1,99 @@
+---
+/**
+ * Hero della home: titolo, sottotitolo, azioni e foto. Il gruppo di azioni è lo STESSO della barra
+ * fissa del telefono (si passa la stessa lista): sul telefono la barra entra quando questo gruppo
+ * esce dalla vista (solo CSS, `motion.css`); senza quel meccanismo il gruppo sta nascosto sul
+ * telefono e c'è solo la barra, così si vede un solo pulsante pieno. Da `md` il gruppo è sempre
+ * visibile. Il titolo non si anima (protegge la LCP) e la foto è l'elemento prioritario.
+ *
+ * Due varianti sugli stessi dati: `split` (predefinita) con testo e foto affiancati; `cover` con la
+ * foto grande quanto lo schermo (meno la barra in alto) e titolo e azioni sovrapposti, al centro. Nella
+ * variante `cover` un velo del colore del testo del tema (`HERO_SCRIM_PERCENT` in `@siti/design`)
+ * scurisce la foto: è l'unica opacità ammessa su un ruolo, perché il titolo si legga su qualunque
+ * foto. `check-site` verifica il contrasto nel caso peggiore (foto bianca o nera) dove c'è `data-hero-cover`.
+ */
+import Button from "../Button.astro";
+import { BUTTON_BASE, buttonClasses } from "../button-classes.ts";
+import type { ResolvedImage } from "../content/images.ts";
+import type { ShellAction } from "../content/shell.ts";
+import SiteImage from "./SiteImage.astro";
+
+interface Props {
+	title: string;
+	subtitle?: string;
+	image?: ResolvedImage;
+	actions: ShellAction[];
+	variant?: "split" | "cover";
+}
+
+const { title, subtitle, image, actions, variant = "split" } = Astro.props;
+// Il secondo pulsante sul velo scuro: bordo e testo chiari (quello normale è scuro su sfondo chiaro).
+const coverSecondary = `${BUTTON_BASE} border-2 border-bg text-bg hover:bg-bg hover:text-ink`;
+---
+
+{variant === "cover" ? (
+	<section
+		data-hero-cover
+		class="relative isolate flex min-h-[calc(100svh-4rem)] items-center overflow-clip bg-ink"
+	>
+		{image && (
+			<div data-hero-media class="absolute inset-0 -z-20">
+				<SiteImage
+					image={image}
+					priority
+					sizes="100vw"
+					class="size-full object-cover"
+				/>
+			</div>
+		)}
+		<div
+			aria-hidden="true"
+			class="absolute inset-0 -z-10 bg-[color-mix(in_srgb,var(--t-ink)_70%,transparent)]"
+		></div>
+		<div class="mx-auto w-full max-w-5xl px-4 py-16">
+			<h1 class="max-w-3xl font-display text-5xl font-bold text-bg md:text-7xl">
+				{title}
+			</h1>
+			{subtitle && <p class="mt-5 max-w-2xl text-xl text-bg">{subtitle}</p>}
+			<ul data-hero-actions class="mt-8 flex flex-wrap gap-3">
+				{actions.map((action, index) => (
+					<li>
+						<a
+							href={action.href}
+							data-button
+							class={index === 0 ? buttonClasses("primary") : coverSecondary}
+						>
+							{action.label}
+						</a>
+					</li>
+				))}
+			</ul>
+		</div>
+	</section>
+) : (
+	<section class="mx-auto grid max-w-5xl gap-8 px-4 py-8 md:grid-cols-2 md:items-center md:py-12">
+		<div>
+			<h1 class="font-display text-4xl font-bold text-ink md:text-5xl">
+				{title}
+			</h1>
+			{subtitle && <p class="mt-4 text-lg text-muted">{subtitle}</p>}
+			<ul data-hero-actions class="mt-6 flex flex-wrap gap-3">
+				{actions.map((action, index) => (
+					<li>
+						<Button
+							href={action.href}
+							variant={index === 0 ? "primary" : "secondary"}
+						>
+							{action.label}
+						</Button>
+					</li>
+				))}
+			</ul>
+		</div>
+		{image && (
+			<div data-hero-media class="overflow-clip rounded-ui">
+				<SiteImage image={image} priority class="h-auto w-full" />
+			</div>
+		)}
+	</section>
+)}

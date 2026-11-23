@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@siti/core/theme.css";
+/* Valori del design: generato da DESIGN.md con `pnpm run design` (non in git). */
+@import "./theme.generated.css";
+/* Classi della sezione del menu (preset ristorante). */
+@import "@siti/preset-ristorante/preset.css";

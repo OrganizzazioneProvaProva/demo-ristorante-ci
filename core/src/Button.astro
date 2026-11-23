@@ -1,0 +1,33 @@
+---
+/**
+ * Pulsante del core. Provenienza: struttura (link o pulsante, due varianti) ispirata al
+ * pulsante di Fulldev UI (MIT, Copyright (c) 2024-present Fulldev, registro
+ * `fulldev-ui@0.26.0`, 19/11/2026); classi riscritte sui ruoli del design system.
+ */
+import type { HTMLAttributes } from "astro/types";
+import { type ButtonVariant, buttonClasses } from "./button-classes.ts";
+
+interface Props extends Omit<HTMLAttributes<"a">, "type"> {
+	/** Con `href` è un link (`<a>`), senza è un `<button type="button">`. */
+	href?: string;
+	variant?: ButtonVariant;
+	/** Per il menu nativo: id del `popover` che il pulsante apre (`<nav popover>`). */
+	popovertarget?: string;
+	popovertargetaction?: "show" | "hide" | "toggle";
+}
+
+// Gli altri attributi (aria-*, target, rel, popovertarget…) passano all'elemento.
+const { href, variant = "primary", class: className, ...rest } = Astro.props;
+const Tag = href === undefined ? "button" : "a";
+const type = href === undefined ? ("button" as const) : undefined;
+---
+
+<Tag
+	href={href}
+	type={type}
+	data-button
+	class:list={[buttonClasses(variant), className]}
+	{...rest}
+>
+	<slot />
+</Tag>

@@ -1,0 +1,38 @@
+---
+/**
+ * Prova sociale: una scheda sottile con il riepilogo della valutazione pubblica e il pulsante che porta
+ * alla scheda dell'attività su Google Maps, nella sezione delle recensioni (indirizzo https scritto dal
+ * titolare nello Studio). Il testo di recensioni copiato da altri servizi non si mostra mai (privacy e
+ * diritto d'autore). Le testimonianze scritte dal titolare, con il consenso di chi parla, sono un'altra
+ * cosa: vedi `Testimonials.astro`. La valutazione la scrive a mano il titolare: può invecchiare.
+ */
+import type { Language } from "@siti/config";
+import Button from "../Button.astro";
+import { socialProofText } from "../content/shell.ts";
+
+interface Props {
+	language: Language;
+	proof: {
+		rating: number;
+		reviewCount?: number | null;
+		sourceName: string;
+		sourceUrl: string;
+	};
+}
+
+const { language, proof } = Astro.props;
+const text = socialProofText(proof, language);
+---
+
+<section class="mx-auto max-w-5xl px-4 pb-10">
+	<div
+		data-card
+		data-reveal
+		class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-ui border border-line bg-surface px-5 py-3"
+	>
+		<p class="font-display text-lg font-bold text-ink">{text.summary}</p>
+		<Button href={proof.sourceUrl} variant="secondary" rel="noopener noreferrer"
+			>{text.link}</Button
+		>
+	</div>
+</section>

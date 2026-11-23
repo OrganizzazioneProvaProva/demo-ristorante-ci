@@ -1,0 +1,29 @@
+{
+	"name": "@siti/preset-ristorante-studio",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"description": "Plugin Studio del preset ristorante/pizzeria: menu, piatti, allergeni. Presuppone il plugin del core nello stesso Studio.",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "node --test"
+	},
+	"devDependencies": {
+		"@sanity/validation": "^6.23.0",
+		"@types/node": "^26.6.6",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"sanity": "catalog:",
+		"styled-components": "catalog:"
+	},
+	"peerDependencies": {
+		"react": "catalog:",
+		"sanity": "catalog:"
+	},
+	"dependencies": {
+		"@siti/studio-core": "workspace:*"
+	}
+}

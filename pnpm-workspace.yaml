@@ -1,0 +1,20 @@
+packages:
+  - core
+  - packages/*
+  - studio/*
+  - preset/*
+  - preset/*/studio
+  - clienti/*
+  - clienti/*/studio
+
+# 04 §2: versioni pubblicate da meno di 7 giorni non si installano (unità: minuti)
+minimumReleaseAge: 10080
+
+# 04 §2: script di installazione delle dipendenze bloccati salvo elenco (oggi vuoto)
+allowBuilds: {}
+
+catalog:
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  sanity: ^6.23.0
+  styled-components: ^6.6.0

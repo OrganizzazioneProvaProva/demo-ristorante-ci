@@ -1,0 +1,29 @@
+{
+	"name": "demo-ristorante",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build && node ../../core/src/checks/run-write-headers.ts",
+		"preview": "astro preview",
+		"astro": "astro",
+		"typecheck": "astro check",
+		"test": "node ../../core/src/checks/run-static-rules.ts src && pnpm build && node ../../core/src/checks/run-check-site.ts --probe node_modules/@siti/preset-ristorante/src/probe.ts && node ../../core/src/checks/run-e2e.ts && node check-demo.mjs",
+		"design": "siti-design build DESIGN.md --out src/styles/theme.generated.css"
+	},
+	"dependencies": {
+		"@siti/config": "workspace:*",
+		"@siti/core": "workspace:*",
+		"@siti/data": "workspace:*",
+		"@siti/design": "workspace:*",
+		"@siti/preset-ristorante": "workspace:*",
+		"@tailwindcss/vite": "^4.3.5",
+		"astro": "^7.4.11",
+		"tailwindcss": "^4.3.5"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.12",
+		"wrangler": "4.162.0"
+	}
+}

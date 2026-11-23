@@ -1,0 +1,19 @@
+---
+/** Presentazione del locale ("La nostra storia"): titolo facoltativo e testo. */
+interface Props {
+	id: string;
+	title?: string;
+	text: string;
+}
+
+const { id, title, text } = Astro.props;
+---
+
+<section id={id} class="mx-auto max-w-5xl px-4 py-10">
+	{title && (
+		<h2 data-reveal class="font-display text-2xl font-bold text-ink">
+			{title}
+		</h2>
+	)}
+	<p class="mt-3 max-w-prose text-lg text-ink">{text}</p>
+</section>

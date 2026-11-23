@@ -1,0 +1,8 @@
+---
+import NotFoundPage from "@siti/core/components/NotFoundPage.astro";
+import { config } from "../content/home.ts";
+import { notFoundPageFor } from "../content/page-models.ts";
+import "../styles/global.css";
+---
+
+<NotFoundPage {...notFoundPageFor(config.defaultLanguage)} />

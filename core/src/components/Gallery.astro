@@ -1,0 +1,188 @@
+---
+/**
+ * Galleria: quattro varianti sugli stessi dati. `mosaic`: foto a blocchi di dimensioni diverse; un
+ * clic la ingrandisce con un'animazione (vedi `scripts/gallery-lightbox.ts`). `fan`: ventaglio di foto (3 sul telefono, 5 da `md`),
+ * trascinabile, con frecce e pulsanti; senza JavaScript è la stessa fila scorrevole di `strip`. `grid`: griglia (2 colonne sul telefono, 3 da `md`).
+ * `strip`: striscia che scorre in orizzontale con aggancio (`scroll-snap`), solo CSS; la regione
+ * si raggiunge con Tab e si scorre con le frecce. Nessun JavaScript né finestra di ingrandimento.
+ */
+import type { Language } from "@siti/config";
+import { FAN_MIN_IMAGES } from "../content/gallery.ts";
+import type { ResolvedImage } from "../content/images.ts";
+import { SECTION_LABELS } from "../content/section-labels.ts";
+import SiteImage from "./SiteImage.astro";
+
+interface Props {
+	images: ResolvedImage[];
+	language: Language;
+	variant?: "grid" | "strip" | "fan" | "mosaic";
+	/** Senza titolo di sezione: per la pagina che ha già il suo `h1` ("Galleria"). */
+	hideTitle?: boolean;
+}
+
+const { images, language, hideTitle = false } = Astro.props;
+// Il ventaglio è un ciclo infinito e vuole almeno `FAN_MIN_IMAGES` foto: con meno si usa la fila scorrevole.
+const variant =
+	Astro.props.variant === "fan" && images.length < FAN_MIN_IMAGES
+		? "strip"
+		: (Astro.props.variant ?? "grid");
+const labels = SECTION_LABELS[language];
+---
+
+{images.length > 0 && (
+	<section
+		id="galleria"
+		aria-label={hideTitle ? labels.gallery : undefined}
+		class="mx-auto max-w-5xl px-4 py-10"
+	>
+		{!hideTitle && (
+			<h2 data-reveal class="font-display text-2xl font-bold text-ink">
+				{labels.gallery}
+			</h2>
+		)}
+		{variant === "mosaic" ? (
+			<div data-lightbox-root>
+				<ul data-mosaic class="mt-4">
+					{images.map((image, index) => (
+						<li data-reveal class="overflow-hidden rounded-ui">
+							<a
+								data-lightbox-open
+								href={image.local?.src ?? image.url}
+								aria-label={labels.galleryOpen
+									.replace("{n}", String(index + 1))
+									.replace("{total}", String(images.length))}
+							>
+								<SiteImage image={image} class="size-full object-cover" />
+							</a>
+						</li>
+					))}
+				</ul>
+				<dialog data-lightbox aria-label={labels.galleryDialog}>
+					<button type="button" aria-label={labels.galleryClose}>
+						<img alt="" />
+					</button>
+				</dialog>
+			</div>
+		) : variant === "fan" ? (
+			<section
+				data-fan
+				aria-label={labels.galleryRegion}
+				aria-roledescription={labels.galleryCarousel}
+				class="mt-4"
+			>
+				<div
+					data-fan-viewport
+					tabindex="0"
+					class="snap-x snap-mandatory overflow-x-auto"
+				>
+					<ul data-fan-track class="flex gap-3">
+						{images.map((image, index) => (
+							<li
+								data-fan-slide
+								class="w-4/5 shrink-0 snap-center overflow-hidden rounded-ui md:w-1/3"
+							>
+								{/* biome-ignore lint/a11y/useSemanticElements: schema ARIA del carosello (WAI-ARIA APG): ogni diapositiva è un `group` con `aria-roledescription`, non un `fieldset`. */}
+								<div
+									role="group"
+									aria-roledescription={labels.gallerySlideRole}
+									aria-label={labels.gallerySlide
+										.replace("{n}", String(index + 1))
+										.replace("{total}", String(images.length))}
+									class="size-full"
+								>
+									<SiteImage
+										image={image}
+										class="aspect-[4/3] size-full object-cover"
+									/>
+								</div>
+							</li>
+						))}
+					</ul>
+				</div>
+				<div
+					data-fan-controls
+					hidden
+					class="mt-4 flex items-center justify-center gap-3"
+				>
+					<button
+						type="button"
+						data-fan-prev
+						aria-label={labels.galleryPrevious}
+						class="inline-flex size-11 items-center justify-center rounded-full border-2 border-ink text-ink hover:bg-surface disabled:opacity-40"
+					>
+						<svg
+							aria-hidden="true"
+							viewBox="0 0 24 24"
+							class="size-5"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="m15 5-7 7 7 7" />
+						</svg>
+					</button>
+					<button
+						type="button"
+						data-fan-next
+						aria-label={labels.galleryNext}
+						class="inline-flex size-11 items-center justify-center rounded-full border-2 border-ink text-ink hover:bg-surface disabled:opacity-40"
+					>
+						<svg
+							aria-hidden="true"
+							viewBox="0 0 24 24"
+							class="size-5"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="m9 5 7 7-7 7" />
+						</svg>
+					</button>
+				</div>
+				<p
+					aria-live="polite"
+					data-fan-status
+					data-template={labels.gallerySlide}
+					class="sr-only"
+				></p>
+			</section>
+		) : variant === "strip" ? (
+			<section
+				aria-label={labels.galleryRegion}
+				tabindex="0"
+				class="mt-4 snap-x snap-mandatory overflow-x-auto"
+			>
+				<ul class="flex gap-3">
+					{images.map((image) => (
+						<li
+							data-zoom
+							class="w-4/5 shrink-0 snap-center overflow-hidden rounded-ui md:w-1/3"
+						>
+							<SiteImage
+								image={image}
+								class="aspect-[4/3] w-full object-cover"
+							/>
+						</li>
+					))}
+				</ul>
+			</section>
+		) : (
+			<ul class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+				{images.map((image) => (
+					<li data-reveal data-zoom class="overflow-hidden rounded-ui">
+						<SiteImage image={image} class="aspect-[4/3] w-full object-cover" />
+					</li>
+				))}
+			</ul>
+		)}
+	</section>
+)}
+
+<script>
+import "../scripts/gallery-fan.ts";
+import "../scripts/gallery-lightbox.ts";
+</script>

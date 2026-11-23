@@ -1,0 +1,22 @@
+{
+	"name": "@siti/config",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"description": "Schema di site.config.ts. Pacchetto neutro: solo zod, nessun import di Astro, React o Sanity, così lo usano sia il sito sia lo Studio.",
+	"exports": {
+		".": "./src/index.ts",
+		"./rules": "./src/rules.ts",
+		"./holidays": "./src/holidays.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "node --test"
+	},
+	"dependencies": {
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@types/node": "^26.6.6"
+	}
+}

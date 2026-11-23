@@ -1,0 +1,21 @@
+---
+import SiteLayout from "@siti/core/layouts/SiteLayout.astro";
+import type { ComponentProps } from "astro/types";
+import type { ResolvedGroup } from "../menu.ts";
+import Menu from "./Menu.astro";
+
+interface Props {
+	layout: ComponentProps<typeof SiteLayout>;
+	groups: ResolvedGroup[];
+}
+
+const { layout, groups } = Astro.props;
+const { language, title } = layout;
+---
+
+<SiteLayout {...layout}>
+	<div class="mx-auto max-w-5xl px-4 pt-8">
+		<h1 class="font-display text-4xl font-bold text-ink">{title}</h1>
+	</div>
+	<Menu groups={groups} language={language} />
+</SiteLayout>

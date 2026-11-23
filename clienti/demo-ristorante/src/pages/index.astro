@@ -1,0 +1,7 @@
+---
+import HomePage from "@siti/core/components/HomePage.astro";
+import { homePageFor } from "../content/page-models.ts";
+import "../styles/global.css";
+---
+
+<HomePage {...homePageFor("it", Astro.site)} />

@@ -1,0 +1,66 @@
+/*
+  Menu del telefono (`Header.astro`): il pannello si apre sotto l'intestazione, alto quanto le sue voci
+  (non copre la pagina), e la pagina sotto si oscura (60%) mentre l'intestazione resta ben visibile. Il pulsante a hamburger diventa una X
+  quando il pannello è aperto; la transizione sta in `motion.css`, dentro `prefers-reduced-motion`.
+*/
+[data-site-header] {
+	anchor-name: --site-header;
+}
+
+/* Il velo sta accanto all'intestazione (non dentro il pannello, che il browser ancora al pannello stesso):
+   parte dal bordo inferiore dell'intestazione e arriva in fondo; l'intestazione resta ben visibile. */
+[data-menu-veil] {
+	display: none;
+}
+
+@media (max-width: 47.999rem) {
+	/* Il retro del popover resta trasparente: serve solo a chiudere il menu toccando fuori. */
+	#site-menu::backdrop {
+		background: transparent;
+	}
+
+	html:has(#site-menu:popover-open) [data-menu-veil] {
+		display: block;
+		position: fixed;
+		inset: 4.5rem 0 0 0;
+		z-index: 15;
+		background: color-mix(in srgb, var(--t-ink) 60%, transparent);
+		pointer-events: none;
+	}
+
+	/* Sotto l'intestazione, dovunque sia (anche con la fascia degli avvisi sopra). */
+	@supports (top: anchor(bottom)) {
+		#site-menu {
+			position-anchor: --site-header;
+			top: anchor(bottom);
+			bottom: auto;
+		}
+
+		html:has(#site-menu:popover-open) [data-menu-veil] {
+			position-anchor: --site-header;
+			top: anchor(bottom);
+		}
+	}
+}
+
+/* Le tre barre diventano una X: la prima e la terza si incrociano, quella in mezzo sparisce. */
+header:has(#site-menu:popover-open)
+	[data-menu-toggle]
+	span
+	> span:nth-child(1) {
+	transform: translateY(7px) rotate(45deg);
+}
+
+header:has(#site-menu:popover-open)
+	[data-menu-toggle]
+	span
+	> span:nth-child(2) {
+	opacity: 0;
+}
+
+header:has(#site-menu:popover-open)
+	[data-menu-toggle]
+	span
+	> span:nth-child(3) {
+	transform: translateY(-7px) rotate(-45deg);
+}

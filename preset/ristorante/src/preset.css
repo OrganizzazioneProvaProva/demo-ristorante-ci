@@ -1,0 +1,7 @@
+/*
+  Classi del preset ristorante. Tailwind v4 non scansiona node_modules: il sito importa questo
+  file dopo `@siti/core/theme.css` e così le classi usate solo dai componenti del preset
+  finiscono nel suo CSS. Test e controlli sono esclusi (come nel core).
+*/
+@source "./";
+@source not "./**/*.test.*";

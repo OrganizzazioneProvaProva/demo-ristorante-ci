@@ -1,0 +1,143 @@
+---
+/**
+ * Corpo di una pagina legale (privacy, cookie, note legali, accessibilità): titolo, indice e sezioni
+ * dei modelli di `legal-text.ts`, adattati ai dati dell'attività. Finché il modello non è stato
+ * rivisto da un legale (`LEGAL_MODEL_REVIEWED`) la pagina è una bozza dichiarata, con
+ * `data-legal-placeholder`: `check-site` ferma la build dei siti veri. Le voci `todo` (dati che
+ * il modello non può conoscere, come il registro delle imprese) sono segnate allo stesso modo.
+ */
+import type { Language, SiteConfig } from "@siti/config";
+import type { CompanyInfo } from "../content/company.ts";
+import { LEGAL_LABELS, type LegalSlug } from "../content/legal.ts";
+import {
+	LEGAL_MODEL_VERSION,
+	type LegalFeatures,
+	legalDraft,
+	legalSections,
+} from "../content/legal-text.ts";
+import { formatDay } from "../content/section-labels.ts";
+
+interface Props {
+	slug: LegalSlug;
+	language: Language;
+	company: CompanyInfo;
+	config: SiteConfig;
+	/** Funzioni del sito che i testi devono nominare (modulo, testimonianze, servizi di terzi…). */
+	features: LegalFeatures;
+}
+
+const { slug, language, company, config, features } = Astro.props;
+const title = LEGAL_LABELS[language].pages[slug].title;
+const sections = legalSections(slug, language, company, features, config);
+const it = language === "it";
+const draft = legalDraft();
+---
+
+<article
+	data-legal-placeholder={draft ? "" : undefined}
+	class="mx-auto max-w-3xl px-4 py-10"
+>
+	<h1 class="font-display text-4xl font-bold text-ink">{title}</h1>
+	{draft && (
+		<p
+			role="note"
+			class="mt-4 border-l-4 border-accent bg-surface px-4 py-3 text-sm text-ink"
+		>
+			{it
+				? `Bozza: questo testo è un modello generico, in attesa di revisione da parte di un legale (versione del ${formatDay(LEGAL_MODEL_VERSION, language)}).`
+				: `Draft: this text is a generic model, awaiting review by a lawyer (version of ${formatDay(LEGAL_MODEL_VERSION, language)}).`}
+		</p>
+	)}
+	{sections.length > 3 && (
+		<nav aria-label={it ? "Indice della pagina" : "On this page"} class="mt-6">
+			<ol class="grid gap-1 text-ink">
+				{sections.map((section, index) => (
+					<li>
+						<a
+							href={`#${section.id}`}
+							class="inline-block py-1 underline underline-offset-4"
+						>
+							{index + 1}. {section.heading}
+						</a>
+					</li>
+				))}
+			</ol>
+		</nav>
+	)}
+	{sections.map((section, index) => (
+		<section id={section.id} class="mt-10 scroll-mt-24">
+			<h2 class="font-display text-2xl font-bold text-ink">
+				{index + 1}. {section.heading}
+			</h2>
+			{section.blocks.map((block) => {
+				switch (block.kind) {
+					case "p":
+						return (
+							<p class="mt-3 text-ink" data-cookie-tool={block.cookieTool}>
+								{block.text}
+							</p>
+						);
+					case "h3":
+						return (
+							<h3 class="mt-5 font-display text-lg font-bold text-ink">
+								{block.text}
+							</h3>
+						);
+					case "ul":
+						return (
+							<ul class="mt-3 list-disc space-y-2 pl-6 text-ink">
+								{block.items.map((item) => (
+									<li>{item}</li>
+								))}
+							</ul>
+						);
+					case "facts":
+						return (
+							<dl class="mt-3 grid gap-1 text-ink">
+								{block.facts.map((fact) => (
+									<div class="flex flex-wrap gap-x-2">
+										<dt class="font-semibold">{fact.label}</dt>
+										<dd>
+											{fact.href ? (
+												<a
+													href={fact.href}
+													class="underline underline-offset-4"
+												>
+													{fact.value}
+												</a>
+											) : (
+												fact.value
+											)}
+										</dd>
+									</div>
+								))}
+							</dl>
+						);
+					case "link":
+						return (
+							<p class="mt-3">
+								<a
+									href={block.href}
+									class="text-ink underline underline-offset-4"
+								>
+									{block.text}
+								</a>
+							</p>
+						);
+					case "todo":
+						return (
+							<p
+								data-legal-placeholder
+								class="mt-3 border-l-4 border-accent bg-surface px-4 py-3 text-ink"
+							>
+								<strong>{it ? "Da completare:" : "To be completed:"}</strong>{" "}
+								{block.text}
+							</p>
+						);
+					default:
+						return null;
+				}
+			})}
+		</section>
+	))}
+</article>

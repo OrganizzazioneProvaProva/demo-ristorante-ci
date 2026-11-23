@@ -1,0 +1,123 @@
+---
+/**
+ * Modulo di richiesta (02, "Form e pulsanti"): solo elementi nativi, validazione del browser
+ * (nessun JavaScript), suggerimenti collegati con `aria-describedby`, link all'informativa
+ * accanto al pulsante di invio, campo trappola per i bot e, se il sito attiva `modules.antispam: "turnstile"`, il widget Turnstile. Va al Worker (passo 7) con un POST normale: finché non c'è,
+ * `action` è l'indirizzo segnaposto. Gli errori del server arriveranno con il Worker.
+ */
+
+import { buttonClasses } from "../button-classes.ts";
+import type { ContactFormModel } from "../content/contact-form.ts";
+
+interface Props {
+	model: ContactFormModel;
+	/** Identificatore del form (ancora `#prenota`, prefisso degli id dei campi). */
+	id: string;
+}
+
+const { model, id } = Astro.props;
+const { labels } = model;
+const control =
+	"mt-1 block w-full rounded-ui border-2 border-ink bg-bg px-3 py-2 text-ink";
+---
+
+<form
+	id={id}
+	method="post"
+	action={model.endpoint}
+	aria-label={labels.formLabel}
+	class="grid gap-5"
+>
+	{model.fields.map((field) => {
+		const fieldId = `${id}-${field.name}`;
+		const hintId = field.hint ? `${fieldId}-hint` : undefined;
+		const common = {
+			id: fieldId,
+			name: field.name,
+			required: field.required,
+			autocomplete: field.autocomplete,
+			"aria-describedby": hintId,
+			class: control,
+		};
+		return (
+			<div>
+				<label for={fieldId} class="font-semibold text-ink">
+					{field.label}
+					<span class="font-normal text-muted">
+						({field.required ? labels.required : labels.optional})
+					</span>
+				</label>
+				{field.hint && (
+					<p id={hintId} class="text-sm text-muted">
+						{field.hint}
+					</p>
+				)}
+				{field.kind === "textarea" ? (
+					<textarea {...common} rows="4" maxlength={field.maxLength ?? 2000} />
+				) : field.kind === "number" ? (
+					<input
+						{...common}
+						type="number"
+						inputmode="numeric"
+						min={field.min}
+						max={field.max}
+						step="1"
+					/>
+				) : (
+					<input
+						{...common}
+						type={field.kind}
+						maxlength={
+							field.kind === "text" ? (field.maxLength ?? 200) : undefined
+						}
+					/>
+				)}
+			</div>
+		);
+	})}
+	<div>
+		<label for={`${id}-consent`} class="flex items-start gap-3 text-ink">
+			<input
+				id={`${id}-consent`}
+				name="consent"
+				type="checkbox"
+				required
+				class="mt-1 size-5 shrink-0 accent-accent"
+			>
+			<span>
+				{labels.consent}:
+				<a href={model.privacyHref} class="underline">{labels.privacyLink}</a>
+			</span>
+		</label>
+	</div>
+	{/* Campo trappola: nascosto alle persone e ai lettori di schermo, fuori dal giro del Tab. */}
+	<div class="sr-only" aria-hidden="true">
+		<label for={`${id}-${model.honeypotName}`}>{labels.honeypot}</label>
+		<input
+			id={`${id}-${model.honeypotName}`}
+			name={model.honeypotName}
+			type="text"
+			tabindex="-1"
+			autocomplete="off"
+		>
+	</div>
+	{model.turnstileSiteKey && (
+		<div>
+			<div class="cf-turnstile" data-sitekey={model.turnstileSiteKey}></div>
+			<noscript>
+				<p class="text-ink">{labels.antispamNoScript}</p>
+			</noscript>
+			<script
+				is:inline
+				src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+				async
+				defer
+			></script>
+		</div>
+	)}
+	<div>
+		<button type="submit" class={buttonClasses("primary")}>
+			{labels.submit}
+		</button>
+	</div>
+</form>

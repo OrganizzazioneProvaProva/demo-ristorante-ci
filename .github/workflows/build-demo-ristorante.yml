@@ -1,0 +1,55 @@
+name: Build demo ristorante
+
+on: workflow_dispatch
+
+permissions: {}
+
+concurrency:
+  group: build-demo-ristorante
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Install Chromium for the browser tests
+        run: pnpm --filter @siti/core exec playwright-core install --with-deps chromium
+
+      - name: Typecheck the demo
+        run: pnpm --filter demo-ristorante typecheck
+
+      - name: Build from Sanity and check the site
+        env:
+          SITI_CONTENT: sanity
+          SANITY_PROJECT_ID: l89w9ai1
+          SANITY_DATASET: production
+        run: pnpm --filter demo-ristorante test
+
+      - name: Upload the verified dist
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: demo-ristorante-dist
+          path: clienti/demo-ristorante/dist/
+          if-no-files-found: error

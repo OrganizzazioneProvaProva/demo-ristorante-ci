@@ -1,0 +1,28 @@
+---
+import type { SiteConfig } from "@siti/config";
+import type { ComponentProps } from "astro/types";
+import type { LegalSlug } from "../content/legal.ts";
+import type { LegalFeatures } from "../content/legal-text.ts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import LegalContent from "./LegalContent.astro";
+
+interface Props {
+	layout: ComponentProps<typeof SiteLayout>;
+	slug: LegalSlug;
+	config: SiteConfig;
+	features: LegalFeatures;
+}
+
+const { layout, slug, config, features } = Astro.props;
+const { language, company } = layout;
+---
+
+<SiteLayout {...layout} indexing={config.indexing}>
+	<LegalContent
+		slug={slug}
+		language={language}
+		company={company}
+		config={config}
+		features={features}
+	/>
+</SiteLayout>

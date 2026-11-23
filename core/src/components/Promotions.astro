@@ -1,0 +1,76 @@
+---
+/**
+ * Promozioni a schede: immagine facoltativa, titolo, descrizione, scadenza e link. Scritte alla
+ * build per ciò che è valido quel giorno; il browser nasconde quelle scadute nel frattempo.
+ */
+import type { Language } from "@siti/config";
+import Button from "../Button.astro";
+import type { ResolvedPromotion } from "../content/promotions.ts";
+import { formatDay, SECTION_LABELS } from "../content/section-labels.ts";
+import SiteImage from "./SiteImage.astro";
+
+interface Props {
+	promotions: ResolvedPromotion[];
+	language: Language;
+}
+
+const { promotions, language } = Astro.props;
+const labels = SECTION_LABELS[language];
+---
+
+{promotions.length > 0 && (
+	<section
+		id="promozioni"
+		data-valid-group
+		class="mx-auto max-w-5xl px-4 py-10"
+	>
+		<h2 data-reveal class="font-display text-2xl font-bold text-ink">
+			{labels.promotions}
+		</h2>
+		<ul class="mt-4 grid gap-4 md:grid-cols-2">
+			{promotions.map((promotion) => (
+				<li
+					data-valid-from={promotion.validFrom}
+					data-valid-to={promotion.validTo}
+					data-card
+					class="overflow-hidden rounded-ui border border-line bg-surface"
+				>
+					{promotion.image && (
+						<div data-zoom>
+							<SiteImage
+								image={promotion.image}
+								class="aspect-[4/3] w-full object-cover"
+							/>
+						</div>
+					)}
+					<div class="p-4">
+						<h3 class="font-display text-xl font-bold text-ink">
+							{promotion.title}
+						</h3>
+						{promotion.description && (
+							<p class="mt-2 text-ink">{promotion.description}</p>
+						)}
+						{promotion.validTo && (
+							<p class="mt-2 text-sm text-muted">
+								{labels.promotionUntil.replace(
+									"{date}",
+									formatDay(promotion.validTo, language),
+								)}
+							</p>
+						)}
+						{promotion.link && (
+							<p class="mt-4">
+								<Button href={promotion.link} variant="secondary">
+									{labels.promotionLink}
+								</Button>
+							</p>
+						)}
+					</div>
+				</li>
+			))}
+		</ul>
+	</section>
+)}
+
+{/* Lo script che nasconde le promozioni scadute (`valid-dates.ts`) lo porta `Notices.astro`, che sta
+    in ogni pagina con `SiteLayout`: incluso due volte pesava il doppio senza fare di più. */}

@@ -1,0 +1,33 @@
+---
+/**
+ * Pulsante rotondo "torna all'inizio": in basso al centro, appena sopra la barra di azioni del telefono.
+ * È un link all'ancora `#inizio` (la cima del guscio): funziona senza JavaScript e il salto è morbido (`motion.css`).
+ * Compare con l'opacità, mai con `visibility` (che `check-site` non ammette nei `@keyframes`): sta in fondo
+ * alla pagina, così con la tastiera ci si arriva solo scorrendo fino in fondo, dove è già visibile.
+ */
+interface Props {
+	label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<a
+	href="#inizio"
+	data-scroll-top
+	class="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-10 inline-flex size-11 -translate-x-1/2 items-center justify-center rounded-full border-2 border-ink bg-surface text-ink md:bottom-6"
+>
+	<svg
+		aria-hidden="true"
+		viewBox="0 0 24 24"
+		class="size-5"
+		fill="none"
+		stroke="currentColor"
+		stroke-width="2"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+	>
+		<path d="m6 15 6-6 6 6" />
+	</svg>
+	<span class="sr-only">{label}</span>
+</a>

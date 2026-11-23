@@ -1,0 +1,106 @@
+/*
+  Galleria a blocchi (`Gallery variant="mosaic"`): le foto occupano celle di dimensioni diverse in un
+  disegno che si ripete ogni 6 foto e chiude un rettangolo senza vuoti (2 colonne sul telefono,
+  4 da `md`). Più sotto, la finestra dell'ingrandimento (`scripts/gallery-lightbox.ts`).
+*/
+[data-mosaic] {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-auto-rows: 9rem;
+	grid-auto-flow: dense;
+	gap: 0.75rem;
+}
+
+/* Telefono (2 colonne): la prima foto è un quadrato grande, la quarta è alta. */
+[data-mosaic] > li:nth-child(6n + 1) {
+	grid-column: span 2;
+	grid-row: span 2;
+}
+
+[data-mosaic] > li:nth-child(6n + 4) {
+	grid-row: span 2;
+}
+
+@media (min-width: 48rem) {
+	[data-mosaic] {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-auto-rows: 10rem;
+	}
+
+	/* 4 colonne × 3 righe ogni 6 foto: grande, piccola, alta, piccola, larga, larga. */
+	[data-mosaic] > li:nth-child(6n + 1) {
+		grid-column: span 2;
+		grid-row: span 2;
+	}
+
+	[data-mosaic] > li:nth-child(6n + 3) {
+		grid-row: span 2;
+	}
+
+	[data-mosaic] > li:nth-child(6n + 4) {
+		grid-row: auto;
+	}
+
+	[data-mosaic] > li:nth-child(6n + 5),
+	[data-mosaic] > li:nth-child(6n) {
+		grid-column: span 2;
+	}
+}
+
+[data-mosaic] a {
+	display: block;
+	height: 100%;
+	cursor: zoom-in;
+}
+
+[data-mosaic] img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+/* Finestra dell'ingrandimento: tutta la pagina, sfondo scuro dal colore del testo del tema. */
+dialog[data-lightbox] {
+	width: 100vw;
+	max-width: none;
+	height: 100dvh;
+	max-height: none;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	overflow: hidden;
+}
+
+dialog[data-lightbox]::backdrop {
+	background: color-mix(in srgb, var(--t-ink) 80%, transparent);
+	backdrop-filter: blur(10px);
+}
+
+/* Mentre la foto si anima, l'intestazione e la barra di azioni perdono il nome di transizione che
+   usano per il cambio di pagina: altrimenti il browser le tratta come un gruppo a sé, nitido sopra
+   lo sfondo sfocato, e per un attimo restano sopra la foto (lo scrive `gallery-lightbox.ts`). */
+html[data-lightbox-vt] header,
+html[data-lightbox-vt] [data-action-bar] {
+	view-transition-name: none;
+}
+
+/* Sotto la barra in alto: `--lb-top` lo scrive lo script (altezza della barra, avvisi compresi). */
+dialog[data-lightbox] button {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	align-items: center;
+	justify-content: center;
+	padding: calc(var(--lb-top, 0px) + 1.5rem) 1.5rem 1.5rem;
+	border: 0;
+	background: none;
+	cursor: zoom-out;
+}
+
+/* Mai più grande dell'area libera, e sui grandi schermi non oltre una misura comoda. */
+dialog[data-lightbox] img {
+	max-width: min(100%, 64rem);
+	max-height: 100%;
+	object-fit: contain;
+	border-radius: var(--t-radius);
+}

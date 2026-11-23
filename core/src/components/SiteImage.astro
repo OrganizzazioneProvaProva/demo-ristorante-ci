@@ -1,0 +1,38 @@
+---
+/**
+ * Immagine del sito: l'unico modo di scrivere un'`<img>` nei componenti del core. Usa
+ * `<Image>` di Astro (02: ottimizzata in build) e passa `lang` quando il testo alternativo è
+ * in un'altra lingua (WCAG 3.1.2, vedi `resolveImage`).
+ */
+import { Image } from "astro:assets";
+import type { ComponentProps } from "astro/types";
+import { type ResolvedImage, requireDimensions } from "../content/images.ts";
+
+interface Props {
+	image: ResolvedImage;
+	class?: string;
+	sizes?: string;
+	/**
+	 * Solo per l'immagine in cima alla pagina (hero, logo): `<Image priority>` imposta
+	 * `loading="eager"`, `decoding="sync"` e `fetchpriority="high"` (Astro ≥ 5.10).
+	 */
+	priority?: boolean;
+}
+
+const { image, class: className, sizes, priority = false } = Astro.props;
+
+// Segnaposto locale (ottimizzato da <Image>, che ricava le dimensioni dall'import) o foto di
+// Sanity (dimensioni dalla query). Il tipo di <Image> distingue i due casi: qui li uniamo.
+const imageProps = {
+	src: image.local ?? image.url,
+	alt: image.alt,
+	lang: image.lang,
+	class: className,
+	sizes,
+	priority,
+	"data-placeholder": image.placeholder ? "" : undefined,
+	...(image.local ? {} : requireDimensions(image)),
+} as ComponentProps<typeof Image>;
+---
+
+<Image {...imageProps} />

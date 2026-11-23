@@ -1,0 +1,70 @@
+---
+import { Font } from "astro:assets";
+import type { IndexingMode, Language } from "@siti/config";
+import { DEFAULT_MOTION_LEVEL, type MotionLevel } from "@siti/design";
+import HreflangLinks from "../components/HreflangLinks.astro";
+import type { Alternate } from "../content/pages.ts";
+import { FAVICON_PATH, OG_LOCALES } from "../content/seo.ts";
+
+interface Props {
+	language: Language;
+	indexing?: IndexingMode;
+	/** Titolo del documento (`<title>`): per i siti con guscio lo compone `SiteLayout` (`documentTitle`). */
+	title: string;
+	description: string;
+	/** Titolo breve della pagina per le anteprime social; predefinito `title`. */
+	socialTitle?: string;
+	/** Nome dell'attività per `og:site_name`. */
+	siteName?: string;
+	alternates?: Alternate[];
+	/** Variabili dei font del DESIGN.md (`fontVariables(tokens)` di @siti/design). */
+	fontVariables?: string[];
+	/** Classi per `<html>` (per esempio il `scroll-padding` della barra di azioni). */
+	htmlClass?: string;
+	/** Livello di movimento del DESIGN.md (`design.tokens.motion`); predefinito `light-animation`. */
+	motion?: MotionLevel;
+}
+
+const {
+	language,
+	indexing = "allow",
+	title,
+	description,
+	socialTitle = title,
+	siteName,
+	alternates = [],
+	fontVariables = [],
+	htmlClass,
+	motion = DEFAULT_MOTION_LEVEL,
+} = Astro.props;
+const canonical = Astro.site
+	? new URL(Astro.url.pathname, Astro.site).href
+	: undefined;
+---
+
+<!doctype html>
+<html lang={language} class={htmlClass} data-motion={motion}>
+	<head>
+		<meta charset="utf-8">
+		{indexing === "block" && <meta name="robots" content="noindex">}
+		<meta name="viewport" content="width=device-width">
+		<title>{title}</title>
+		<meta name="description" content={description}>
+		{canonical && <link rel="canonical" href={canonical} />}
+		<link rel="icon" href={FAVICON_PATH} type="image/svg+xml">
+		<meta property="og:type" content="website">
+		<meta property="og:title" content={socialTitle}>
+		<meta property="og:description" content={description}>
+		<meta property="og:locale" content={OG_LOCALES[language]}>
+		{canonical && <meta property="og:url" content={canonical} />}
+		{siteName && <meta property="og:site_name" content={siteName} />}
+		<meta name="twitter:card" content="summary">
+		<meta name="twitter:title" content={socialTitle}>
+		<meta name="twitter:description" content={description}>
+		<HreflangLinks alternates={alternates} />
+		{fontVariables.map((cssVariable) => <Font cssVariable={cssVariable} />)}
+	</head>
+	<body class="bg-bg font-body text-ink">
+		<slot />
+	</body>
+</html>

@@ -1,0 +1,16 @@
+---
+/**
+ * L'UNICO componente del sito con HTML grezzo (`04` §3, controllo statico in
+ * `checks/static-rules.ts`): scrive un blocco JSON-LD già serializzato con l'escape di `<`, `>`,
+ * `&` e dei separatori di riga Unicode (`serializeJsonLd`). Non passare mai altro che dati.
+ */
+import { serializeJsonLd } from "../content/json-ld.ts";
+
+interface Props {
+	data: unknown;
+}
+
+const { data } = Astro.props;
+---
+
+<script type="application/ld+json" set:html={serializeJsonLd(data)} />

@@ -1,0 +1,36 @@
+{
+	"name": "@siti/preset-ristorante",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"description": "Preset ristorante/pizzeria, lato sito: schemi dei dati del menu e degli allergeni, sezione del menu, insiemi di design.",
+	"exports": {
+		"./allergens": "./src/allergens.ts",
+		"./menu": "./src/menu.ts",
+		"./booking": "./src/booking-request.ts",
+		"./labels": "./src/menu-labels.ts",
+		"./probe": "./src/probe.ts",
+		"./preset.css": "./src/preset.css",
+		"./components/*": "./src/components/*",
+		"./json-ld": "./src/json-ld.ts",
+		"./queries": "./src/queries.ts"
+	},
+	"scripts": {
+		"typecheck": "astro check",
+		"test": "node --test && node ../../core/src/checks/run-static-rules.ts src"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.12",
+		"@types/node": "^26.6.6",
+		"astro": "^7.4.11"
+	},
+	"dependencies": {
+		"@siti/config": "workspace:*",
+		"@siti/core": "workspace:*",
+		"@siti/design": "workspace:*",
+		"zod": "^4.6.7"
+	},
+	"peerDependencies": {
+		"astro": "^7.4.11"
+	}
+}

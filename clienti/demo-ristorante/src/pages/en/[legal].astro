@@ -1,0 +1,14 @@
+---
+import LegalPage from "@siti/core/components/LegalPage.astro";
+import { LEGAL_SLUGS, type LegalSlug } from "@siti/core/content/legal.ts";
+import { legalPageFor } from "../../content/page-models.ts";
+import "../../styles/global.css";
+
+export function getStaticPaths() {
+	return LEGAL_SLUGS.map((legal) => ({ params: { legal } }));
+}
+
+const { legal } = Astro.params;
+---
+
+<LegalPage {...legalPageFor(legal as LegalSlug, "en")} />

@@ -1,0 +1,102 @@
+---
+/**
+ * Sezione orari di apertura: l'elenco della settimana è nell'HTML (leggibile senza JavaScript);
+ * un piccolo modulo (`scripts/open-status.ts`) scrive "aperto ora", segna il giorno di oggi e
+ * nasconde le chiusure già passate. Fuso `Europe/Rome`, chiusure straordinarie, festa del
+ * patrono e festività scelte dal titolare (`closedHolidays`) valgono nello stato.
+ */
+import type { Language } from "@siti/config";
+import { textIn } from "../content/localized.ts";
+import { type OpeningHours, WEEKDAYS } from "../content/opening-hours.ts";
+import { HOURS_LABELS } from "../content/opening-labels.ts";
+import { localDateTime } from "../content/opening-status.ts";
+
+interface Props {
+	hours: OpeningHours;
+	language: Language;
+	/** Data di oggi alla build (AAAA-MM-GG): le chiusure già finite non si scrivono. */
+	buildDate?: string;
+}
+
+const {
+	hours,
+	language,
+	buildDate = localDateTime(new Date()).date,
+} = Astro.props;
+const labels = HOURS_LABELS[language];
+const locale = language === "it" ? "it-IT" : "en-GB";
+
+// Solo ciò che serve allo script (niente testi delle chiusure): meno byte nell'HTML.
+const data = {
+	...Object.fromEntries(WEEKDAYS.map((day) => [day, hours[day]])),
+	closures: (hours.closures ?? []).map(({ from, to }) => ({ from, to })),
+	closedHolidays: hours.closedHolidays ?? [],
+	patronSaintDay: hours.patronSaintDay ?? null,
+};
+
+const date = (value: string) =>
+	new Intl.DateTimeFormat(locale, {
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+		timeZone: "UTC",
+	}).format(new Date(`${value}T00:00:00Z`));
+const closures = (hours.closures ?? []).filter(
+	(closure) => closure.to >= buildDate,
+);
+---
+
+<section id="orari" data-hours-section class="mx-auto max-w-md px-4 py-10">
+	<h2 data-reveal class="text-center font-display text-2xl font-bold text-ink">
+		{labels.title}
+	</h2>
+	<p
+		data-open-status
+		data-hours={JSON.stringify(data)}
+		data-labels={JSON.stringify(labels)}
+		class="mt-2 min-h-7 text-center text-lg font-semibold text-ink"
+	></p>
+	<dl class="mt-4 divide-y divide-line">
+		{WEEKDAYS.map((day) => (
+			<div
+				data-weekday={day}
+				class="flex justify-between gap-4 py-2 text-ink data-today:font-bold"
+			>
+				<dt>{labels.weekdays[day]}</dt>
+				<dd>
+					{hours[day].closed
+						? labels.closedDay
+						: (hours[day].intervals ?? [])
+								.map((interval) => `${interval.opens}–${interval.closes}`)
+								.join(", ")}
+				</dd>
+			</div>
+		))}
+	</dl>
+	{closures.length > 0 && (
+		<div class="mt-6">
+			<h3 class="text-center font-display text-lg font-bold text-ink">
+				{labels.closures}
+			</h3>
+			<ul class="mt-2 text-center text-muted">
+				{closures.map((closure) => {
+					const reason = closure.reason
+						? textIn(closure.reason, language)
+						: undefined;
+					return (
+						<li data-to={closure.to}>
+							{closure.from === closure.to
+								? date(closure.from)
+								: `${date(closure.from)} – ${date(closure.to)}`}
+							{reason ? ` · ${reason}` : ""}
+						</li>
+					);
+				})}
+			</ul>
+		</div>
+	)}
+</section>
+
+<script>
+import "../scripts/open-status.ts";
+</script>

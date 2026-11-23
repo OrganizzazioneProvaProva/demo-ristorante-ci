@@ -1,0 +1,24 @@
+{
+	"name": "@siti/design",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"description": "Legge e convalida il DESIGN.md di un sito (formato di Google, alpha): token di ruolo, controllo del contrasto WCAG, CSS dei valori e configurazione dei font. Pacchetto neutro: nessun import di Astro, React o Sanity.",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"bin": {
+		"siti-design": "./src/cli.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "node --test"
+	},
+	"dependencies": {
+		"yaml": "^2.9.1",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@types/node": "^26.6.6"
+	}
+}
