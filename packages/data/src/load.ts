@@ -127,13 +127,16 @@ export async function loadSiteContent(options: {
 	fixtures: ContentResult;
 	extraQueries?: Record<string, ContentQuery>;
 	client?: QueryClient;
+	onLoaded?: (content: ContentResult, settings: SourceSettings) => void;
 }): Promise<ContentResult> {
+	const settings = sourceSettings(options.env, options.site);
 	const loaded = await loadContent({
-		settings: sourceSettings(options.env, options.site),
+		settings,
 		queries: { ...CORE_QUERIES, ...options.extraQueries },
 		fixtures: options.fixtures,
 		client: options.client,
 	});
+	options.onLoaded?.(loaded, settings);
 	return {
 		...loaded,
 		contacts: loaded.contacts ?? {},
