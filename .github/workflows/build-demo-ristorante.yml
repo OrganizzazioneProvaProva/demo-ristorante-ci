@@ -1,27 +1,30 @@
-name: Build demo ristorante
+name: Observe editorial menu gate selection
 
 on:
+  push:
+    branches:
+      - ci/collaudo-evidenze-gate-menu
   workflow_dispatch:
     inputs:
-      deploy:
-        description: Request an approved deployment of this build
-        type: boolean
-        default: false
+      menu_revision:
+        description: Published Sanity menu revision
+        type: string
+        required: true
+      reference_run:
+        description: Successful reference run on this branch
+        type: string
+        required: true
 
-permissions: {}
-
-concurrency:
-  group: build-demo-ristorante
-  cancel-in-progress: false
+permissions:
+  contents: read
+  actions: read
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    permissions:
-      contents: read
     steps:
-      - name: Check out the repository
+      - name: Check out the test branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
@@ -40,72 +43,82 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Install Chromium for the browser tests
+      - name: Install Chromium for browser checks
         run: pnpm --filter @siti/core exec playwright-core install --with-deps chromium
+
+      - name: Select the Chromium executable expected by Playwright
+        run: |
+          set -euo pipefail
+          browser="$(pnpm --filter @siti/core exec node --input-type=module -e 'import { chromium } from "playwright-core"; console.log(chromium.executablePath());')"
+          case "$browser" in
+            */chromium-1254/*) ;;
+            *) echo "Unexpected Chromium revision: $browser" >&2; exit 1 ;;
+          esac
+          test -x "$browser"
+          "$browser" --version
+          printf 'SITI_CHROMIUM_PATH=%s\n' "$browser" >> "$GITHUB_ENV"
 
       - name: Typecheck the demo
         run: pnpm --filter demo-ristorante typecheck
 
-      - name: Build from Sanity and check the site
+      - name: Build from Sanity and run the quick menu gate
         env:
           SITI_CONTENT: sanity
           SANITY_PROJECT_ID: l89w9ai1
           SANITY_DATASET: production
-        run: pnpm --filter demo-ristorante test
+          SITI_MEASURE_MENU: '1'
+          SITI_BUILD_DOCUMENT_REVISIONS_PATH: ${{ runner.temp }}/menu-document-revisions.json
+        run: time pnpm --filter demo-ristorante test:editorial-menu
 
-      - name: Upload the verified dist
+      - name: Capture the build evidence
+        working-directory: clienti/demo-ristorante
+        run: |
+          set -euo pipefail
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/menu-dist.sha256"
+          test -s "$RUNNER_TEMP/menu-dist.sha256"
+          node build-evidence.ts "$RUNNER_TEMP/menu-document-revisions.json" dist \
+            "$(git rev-parse HEAD)" "$RUNNER_TEMP/menu-build-evidence.json"
+
+      - name: Report the selection without changing the test suite
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REFERENCE_RUN: ${{ inputs.reference_run }}
+          SITI_SANITY_MENU_REVISION: ${{ inputs.menu_revision }}
+        run: |
+          set -euo pipefail
+          if [[ "$REFERENCE_RUN" =~ ^[0-9]+$ ]] &&
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REFERENCE_RUN" > "$RUNNER_TEMP/reference-run.json" &&
+            attempt="$(jq -er '.run_attempt' "$RUNNER_TEMP/reference-run.json")" &&
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REFERENCE_RUN/attempts/$attempt/jobs" > "$RUNNER_TEMP/reference-jobs.json" &&
+            gh run download "$REFERENCE_RUN" --repo "$GITHUB_REPOSITORY" \
+              --name menu-shadow-reference --dir "$RUNNER_TEMP/reference"
+          then
+            echo "Reference evidence retrieved."
+          else
+            echo "Reference evidence unavailable."
+          fi
+          node .github/menu-gate/shadow-report.mjs "$RUNNER_TEMP" "$(git rev-parse HEAD)"
+
+      - name: Run additional end-to-end checks on the same dist
+        working-directory: clienti/demo-ristorante
+        run: time node ../../core/src/checks/run-e2e.ts
+
+      - name: Run demo assertions and mutation tests on the same dist
+        working-directory: clienti/demo-ristorante
+        run: time node check-demo.mjs --editorial-menu
+
+      - name: Confirm the full checks kept the dist intact
+        working-directory: clienti/demo-ristorante
+        run: |
+          set -euo pipefail
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/menu-dist-after.sha256"
+          cmp "$RUNNER_TEMP/menu-dist.sha256" "$RUNNER_TEMP/menu-dist-after.sha256"
+
+      - name: Upload verified reference evidence
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: demo-ristorante-dist
-          path: clienti/demo-ristorante/dist/
+          name: menu-shadow-reference
+          path: ${{ runner.temp }}/menu-build-evidence.json
           if-no-files-found: error
-
-  deploy:
-    if: inputs.deploy && github.ref == 'refs/heads/main' && github.repository == 'OrganizzazioneProvaProva/demo-ristorante-ci'
-    needs: build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    environment: demo-ristorante-deploy
-    permissions:
-      contents: read
-    steps:
-      - name: Check out the deployment files
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          sparse-checkout: .github/deploy-demo
-          sparse-checkout-cone-mode: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
-        with:
-          node-version: '24'
-          package-manager-cache: false
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-        with:
-          package_json_file: .github/deploy-demo/package.json
-          run_install: false
-
-      - name: Install pinned Wrangler
-        run: |
-          install_dir="$RUNNER_TEMP/demo-wrangler"
-          mkdir -p "$install_dir"
-          cp .github/deploy-demo/{package.json,pnpm-lock.yaml,pnpm-workspace.yaml} "$install_dir"
-          pnpm --dir "$install_dir" install --frozen-lockfile --ignore-scripts
-
-      - name: Download the verified dist from this run
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: demo-ristorante-dist
-          path: ${{ runner.temp }}/demo-ristorante-dist
-
-      - name: Deploy and verify the demo
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          bash .github/deploy-demo/deploy.sh \
-            "$RUNNER_TEMP/demo-wrangler/node_modules/.bin/wrangler" \
-            "$RUNNER_TEMP/demo-ristorante-dist"

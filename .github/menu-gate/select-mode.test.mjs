@@ -73,6 +73,15 @@ test("falls back to the full suite when evidence is unavailable", () => {
 	assert.equal(selectMenuGate().mode, "full");
 });
 
+test("a verification-only branch can have its own exact ref", () => {
+	const data = structuredClone(example);
+	const expectedRef = "refs/heads/ci/collaudo-evidenze-gate-menu";
+	data.run.ref = expectedRef;
+	data.fullCheck.ref = expectedRef;
+	assert.equal(selectMenuGate(data, trusted).mode, "full");
+	assert.equal(selectMenuGate(data, { ...trusted, expectedRef }).mode, "quick");
+});
+
 for (const [name, edit, reason] of [
 	[
 		"a dispatch by a person",

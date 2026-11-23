@@ -41,12 +41,12 @@ const full = (reason) => ({ mode: "full", reason });
  */
 export function selectMenuGate(
 	{ run, fullCheck, publication, published, candidate } = {},
-	{ appActorId, fullWorkflowId } = {},
+	{ appActorId, fullWorkflowId, expectedRef = main } = {},
 ) {
 	if (
 		run?.eventName !== "workflow_dispatch" ||
 		run.repository !== repository ||
-		run.ref !== main ||
+		run.ref !== expectedRef ||
 		run.attempt !== 1 ||
 		!appActorId ||
 		run.actorId !== appActorId
@@ -62,7 +62,7 @@ export function selectMenuGate(
 		run.headSha !== checkoutSha ||
 		fullCheck?.workflowId !== fullWorkflowId ||
 		fullCheck.repository !== repository ||
-		fullCheck.ref !== main ||
+		fullCheck.ref !== expectedRef ||
 		fullCheck.headSha !== checkoutSha ||
 		fullCheck.conclusion !== "success" ||
 		fullCheck.job?.name !== "verify" ||
