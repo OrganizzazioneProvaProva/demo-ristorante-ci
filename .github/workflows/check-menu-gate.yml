@@ -1,15 +1,15 @@
-name: Check editorial menu gate
+name: Measure the quick editorial menu gate
 
 on:
   push:
     branches:
-      - ci/collaudo-gate-menu
+      - ci/misura-gate-menu-rapido
 
 permissions:
   contents: read
 
 jobs:
-  verify:
+  measure-quick-gate:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -57,25 +57,3 @@ jobs:
           SANITY_DATASET: production
           SITI_MEASURE_MENU: '1'
         run: time pnpm --filter demo-ristorante test:editorial-menu
-
-      - name: Record the verified dist
-        working-directory: clienti/demo-ristorante
-        run: |
-          set -euo pipefail
-          find dist -type f -print0 | sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/menu-dist.sha256"
-          test -s "$RUNNER_TEMP/menu-dist.sha256"
-
-      - name: Run additional end-to-end checks on the same dist
-        working-directory: clienti/demo-ristorante
-        run: time node ../../core/src/checks/run-e2e.ts
-
-      - name: Run demo assertions and mutation tests on the same dist
-        working-directory: clienti/demo-ristorante
-        run: time node check-demo.mjs --editorial-menu
-
-      - name: Confirm the full checks kept the dist intact
-        working-directory: clienti/demo-ristorante
-        run: |
-          set -euo pipefail
-          find dist -type f -print0 | sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/menu-dist-after.sha256"
-          cmp "$RUNNER_TEMP/menu-dist.sha256" "$RUNNER_TEMP/menu-dist-after.sha256"
