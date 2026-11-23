@@ -1,0 +1,8 @@
+{
+  "name": "siti-deploy-demo",
+  "private": true,
+  "packageManager": "pnpm@12.8.1",
+  "dependencies": {
+    "wrangler": "4.162.0"
+  }
+}
