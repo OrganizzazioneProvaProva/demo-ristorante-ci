@@ -9,6 +9,8 @@ const html = readFileSync(
 	"utf8",
 );
 const problems = [];
+// The canonical fixture exercises fixed menu values. Editorial builds check the snapshot.
+const fixtureMenu = !process.argv.includes("--editorial-menu");
 if (!/<html[^>]*\slang="it"/.test(html))
 	problems.push('manca <html lang="it">');
 if (!/<title>[^<]+<\/title>/.test(html))
@@ -52,26 +54,34 @@ const expectIn = (page, label, needles) => {
 	}
 };
 expectIn(menuIt, "menu IT", [
-	'id="pizzeria"',
-	'id="ristorante"',
-	'href="#pizzeria"',
-	"Allergeni: Cereali contenenti glutine, Latte e lattosio",
-	"Chiedi informazioni sugli allergeni al personale.",
-	/7,00\s€/,
 	'aria-current="page"',
 	'href="/menu/"',
 	`hreflang="en" href="${demoOrigin}/en/menu/"`,
 ]);
+if (fixtureMenu) {
+	expectIn(menuIt, "menu IT fixture", [
+		'id="pizzeria"',
+		'id="ristorante"',
+		'href="#pizzeria"',
+		"Allergeni: Cereali contenenti glutine, Latte e lattosio",
+		"Chiedi informazioni sugli allergeni al personale.",
+		/7,00\s€/,
+	]);
+}
 expectIn(menuEn, "menu EN", [
-	'id="pizzeria"',
-	'id="ristorante"',
-	"Allergens: Cereals containing gluten, Milk (including lactose)",
-	"Please ask our staff for allergen information.",
-	/€7\.00/,
 	'href="/en/menu/"',
 	`hreflang="it" href="${demoOrigin}/menu/"`,
 ]);
-if (menuEn.includes("Chiedi informazioni")) {
+if (fixtureMenu) {
+	expectIn(menuEn, "menu EN fixture", [
+		'id="pizzeria"',
+		'id="ristorante"',
+		"Allergens: Cereals containing gluten, Milk (including lactose)",
+		"Please ask our staff for allergen information.",
+		/€7\.00/,
+	]);
+}
+if (fixtureMenu && menuEn.includes("Chiedi informazioni")) {
 	problems.push("menu EN: contiene testo italiano (nessun ripiego)");
 }
 
@@ -191,7 +201,8 @@ for (const [label, page, url, menuUrl] of [
 		[ld.address?.addressLocality === "Città 1", "indirizzo"],
 		[ld.geo?.latitude === 37.3856, "coordinate"],
 		[
-			JSON.stringify(ld.servesCuisine) === '["Sicilian","Pizza"]',
+			!fixtureMenu ||
+				JSON.stringify(ld.servesCuisine) === '["Sicilian","Pizza"]',
 			"servesCuisine",
 		],
 		[
@@ -227,20 +238,21 @@ if (menuIt.includes("application/ld+json"))
 	problems.push("la pagina del menu non deve avere il JSON-LD dell'attività");
 
 // Ricerca nel menu: casella nascosta finché non parte lo script, elementi con il testo di ricerca nella lingua.
-expectIn(menuIt, "menu IT ricerca", [
-	"data-catalog-search",
-	"Cerca nel menu",
-	/data-search="[^"]*descrizione pizza 1/,
-]);
+expectIn(menuIt, "menu IT ricerca", ["data-catalog-search", "Cerca nel menu"]);
 expectIn(menuEn, "menu EN ricerca", ["data-catalog-search", "Search the menu"]);
-// Componenti della voce: nella scheda nella lingua e nel testo di ricerca.
-expectIn(menuIt, "menu IT componenti", [
-	"Componenti: Componente 4, Componente 5, Componente 6",
-	/data-search="[^"]*componente 5/,
-]);
-expectIn(menuEn, "menu EN componenti", [
-	"Components: Component 4, Component 5, Component 6",
-]);
+// Contenuti della fixture verificati nella scheda e nel testo di ricerca.
+if (fixtureMenu) {
+	expectIn(menuIt, "menu IT testo di ricerca", [
+		/data-search="[^"]*descrizione pizza 1/,
+	]);
+	expectIn(menuIt, "menu IT componenti", [
+		"Componenti: Componente 4, Componente 5, Componente 6",
+		/data-search="[^"]*componente 5/,
+	]);
+	expectIn(menuEn, "menu EN componenti", [
+		"Components: Component 4, Component 5, Component 6",
+	]);
+}
 if (
 	!/<div\s[^>]*hidden[^>]*data-catalog-search|data-catalog-search[^>]*\shidden/.test(
 		menuIt,
@@ -409,12 +421,14 @@ expectIn(
 );
 
 // Viste del menu: due gruppi (Pizzeria, Ristorante) come pannelli, con i pulsanti che li scelgono.
-expectIn(menuIt, "menu IT viste", [
-	"data-catalog-views",
-	"data-view-button",
-	/<section[^>]*id="pizzeria"[^>]*data-view-panel/,
-	/<section[^>]*id="ristorante"[^>]*data-view-panel/,
-]);
+if (fixtureMenu) {
+	expectIn(menuIt, "menu IT viste", [
+		"data-catalog-views",
+		"data-view-button",
+		/<section[^>]*id="pizzeria"[^>]*data-view-panel/,
+		/<section[^>]*id="ristorante"[^>]*data-view-panel/,
+	]);
+}
 
 // Contatti e prenotazioni: il modulo ha i campi di prenotazione nella lingua, il link all'informativa
 // accanto al pulsante di invio, l'indirizzo segnaposto (.invalid) e la pagina privacy esiste;

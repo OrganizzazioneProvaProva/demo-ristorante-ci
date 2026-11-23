@@ -9,8 +9,9 @@
 		"preview": "astro preview",
 		"astro": "astro",
 		"typecheck": "astro check",
-		"test": "node ../../core/src/checks/run-static-rules.ts src && pnpm build && node ../../core/src/checks/run-check-site.ts --probe node_modules/@siti/preset-ristorante/src/probe.ts && node ../../core/src/checks/run-e2e.ts && node check-demo.mjs",
-		"design": "siti-design build DESIGN.md --out src/styles/theme.generated.css"
+		"test": "node check-menu.mjs full",
+		"design": "siti-design build DESIGN.md --out src/styles/theme.generated.css",
+		"test:editorial-menu": "node check-menu.mjs quick"
 	},
 	"dependencies": {
 		"@siti/config": "workspace:*",

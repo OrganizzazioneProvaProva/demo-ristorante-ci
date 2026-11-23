@@ -1,0 +1,81 @@
+name: Check editorial menu gate
+
+on:
+  push:
+    branches:
+      - ci/collaudo-gate-menu
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out the test branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Install Chromium for browser checks
+        run: pnpm --filter @siti/core exec playwright-core install --with-deps chromium
+
+      - name: Select the Chromium executable expected by Playwright
+        run: |
+          set -euo pipefail
+          browser="$(pnpm --filter @siti/core exec node --input-type=module -e 'import { chromium } from "playwright-core"; console.log(chromium.executablePath());')"
+          case "$browser" in
+            */chromium-1254/*) ;;
+            *) echo "Unexpected Chromium revision: $browser" >&2; exit 1 ;;
+          esac
+          test -x "$browser"
+          "$browser" --version
+          printf 'SITI_CHROMIUM_PATH=%s\n' "$browser" >> "$GITHUB_ENV"
+
+      - name: Typecheck the demo
+        run: pnpm --filter demo-ristorante typecheck
+
+      - name: Build from Sanity and run the quick menu gate
+        env:
+          SITI_CONTENT: sanity
+          SANITY_PROJECT_ID: l89w9ai1
+          SANITY_DATASET: production
+          SITI_MEASURE_MENU: '1'
+        run: time pnpm --filter demo-ristorante test:editorial-menu
+
+      - name: Record the verified dist
+        working-directory: clienti/demo-ristorante
+        run: |
+          set -euo pipefail
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/menu-dist.sha256"
+          test -s "$RUNNER_TEMP/menu-dist.sha256"
+
+      - name: Run additional end-to-end checks on the same dist
+        working-directory: clienti/demo-ristorante
+        run: time node ../../core/src/checks/run-e2e.ts
+
+      - name: Run demo assertions and mutation tests on the same dist
+        working-directory: clienti/demo-ristorante
+        run: time node check-demo.mjs --editorial-menu
+
+      - name: Confirm the full checks kept the dist intact
+        working-directory: clienti/demo-ristorante
+        run: |
+          set -euo pipefail
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/menu-dist-after.sha256"
+          cmp "$RUNNER_TEMP/menu-dist.sha256" "$RUNNER_TEMP/menu-dist-after.sha256"
